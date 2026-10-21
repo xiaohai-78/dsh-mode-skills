@@ -1,0 +1,4 @@
+# One host row: it serves the Skill Manager page's route.
+- insert:
+    - id: dsh-mode-skills
+      name: dsh-mode-skills

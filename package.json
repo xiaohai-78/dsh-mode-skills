@@ -1,0 +1,80 @@
+{
+  "name": "dsh-mode-skills",
+  "version": "0.1.0",
+  "description": "Skill manager for DeepSeek Harness (dsh): a sidebar page to see every skill and turn it on or off per agent mode, search and tag skills, create and edit them, install them from GitHub, Codex, Claude Code, or a folder, and keep versions; modes keep working after an uninstall.",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "skill",
+    "skills",
+    "skill-manager",
+    "agent-skills",
+    "agent-preset",
+    "codex",
+    "claude-code",
+    "github",
+    "技能"
+  ],
+  "author": "xiaohai-78",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaohai-78/dsh-mode-skills.git"
+  },
+  "homepage": "https://github.com/xiaohai-78/dsh-mode-skills#readme",
+  "bugs": {
+    "url": "https://github.com/xiaohai-78/dsh-mode-skills/issues"
+  },
+  "type": "module",
+  "icon": "icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./policy": "./policy.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "policy.js",
+    "mode-rows.js",
+    "skill-view.js",
+    "skill-store.js",
+    "skill-files.js",
+    "skill-import.js",
+    "state.js",
+    "trash.js",
+    "diagnose.js",
+    "tokens.js",
+    "zip.js",
+    "github.js",
+    "rebase.js",
+    "fs-retry.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  }
+}
