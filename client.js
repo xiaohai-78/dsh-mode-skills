@@ -363,6 +363,17 @@ window.__ModuleLoader__.load({
       'detail.usageNone': '这段时间里没用过',
       'detail.usageLine': '{times}（模型 {model}、手动 {user}），最近 {when}',
       'err.usage-unavailable': '当前组合没有会话历史服务，统计不了使用情况',
+      'close': '关闭',
+      'store.back': '返回 Skill 商城',
+      'store.doneTitle': '已安装 {n} 个 Skill',
+      'store.doneOne': '已安装 1 个 Skill',
+      'store.doneHint': '新装的 Skill 在每个模式里默认都是开的，可以回到列表里按模式调整',
+      'store.doneKeep': '继续逛商城',
+      'store.doneClose': '完成',
+      'store.retry': '重新读取这个仓库',
+      'store.pickMissing': '仓库里没有找到叫「{name}」的 Skill（skills.sh 的记录可能过时了）。下面是仓库里的其他 Skill',
+      'lib.filter': '筛选名称或描述',
+      'lib.filterCount': '显示 {shown}/{total}',
       'store.button': 'Skill 商城',
       'store.title': 'Skill 商城',
       'store.placeholder': '搜索 Skill，例如 pdf、code review、数据库',
@@ -731,6 +742,17 @@ window.__ModuleLoader__.load({
       'detail.usageNone': 'Not used in this time',
       'detail.usageLine': '{times} (model {model}, manual {user}), last {when}',
       'err.usage-unavailable': 'This composition has no session history, so usage cannot be counted',
+      'close': 'Close',
+      'store.back': 'Back to Skill store',
+      'store.doneTitle': 'Installed {n} skills',
+      'store.doneOne': 'Installed 1 skill',
+      'store.doneHint': 'New skills are On in every mode by default; go back to the list to adjust them per mode',
+      'store.doneKeep': 'Keep browsing the store',
+      'store.doneClose': 'Done',
+      'store.retry': 'Read this repository again',
+      'store.pickMissing': 'No skill named "{name}" in this repository (skills.sh may be out of date). Here are the others',
+      'lib.filter': 'Filter by name or description',
+      'lib.filterCount': 'Showing {shown} of {total}',
       'store.button': 'Skill store',
       'store.title': 'Skill store',
       'store.placeholder': 'Search skills, e.g. pdf, code review, database',
@@ -781,6 +803,7 @@ window.__ModuleLoader__.load({
 .sk-row { border: .5px solid var(--dsw-alias-settings-card-stroke, var(--dsw-alias-border-l3)); border-radius: var(--sk-r-md); background: var(--dsw-alias-settings-card-fill, transparent); }
 .sk-top { display: flex; align-items: center; border-radius: var(--sk-r-md); }
 .sk-head { flex: 1 1 auto; min-width: 0; display: flex; gap: 10px; align-items: center; box-sizing: border-box; padding: 10px 12px; font: inherit; text-align: left; border: 0; border-radius: var(--sk-r-md); background: none; color: inherit; cursor: pointer; }
+.sk-head .sk-name { flex: none; }
 .sk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--dsw-font-mono, ui-monospace, monospace); font-weight: 500; white-space: nowrap; }
 .sk-desc { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dsw-alias-label-secondary); }
 .sk-row.is-open .sk-desc { visibility: hidden; }
@@ -817,6 +840,9 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-panel > .sk-field, .sk-section > .sk-field { flex: none; }
 .sk-hint.is-error, .sk-error { color: var(--dsw-alias-state-danger-primary, #d93025); }
 .sk-hint.is-warn { color: var(--dsw-alias-state-warn-primary); }
+.sk-panel[hidden] { display: none; }
+.sk-back { padding-left: 4px; margin-left: -4px; }
+.sk-footer { position: sticky; bottom: 0; z-index: 2; display: flex; flex-direction: column; gap: 8px; margin: 0 -16px -14px; padding: 12px 16px 14px; border-top: .5px solid var(--dsw-alias-border-l3); border-radius: 0 0 var(--sk-r-md) var(--sk-r-md); background: var(--dsw-alias-bg-layer-1); }
 .sk-alias { font-weight: 500; white-space: nowrap; }
 .sk-name.is-dim { font-weight: 400; font-size: 12px; color: var(--dsw-alias-label-tertiary); }
 .sk-chip.is-tag { color: var(--dsw-alias-state-business-primary); }
@@ -851,7 +877,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 @keyframes sk-pulse { from { opacity: .45 } to { opacity: .9 } }
 @media (prefers-reduced-motion: reduce) { .sk-skeleton span { animation: none; } .sk-caret, .sk-switch, .sk-switch::after { transition: none; } }
 @media (hover: hover) { .sk-head:hover, .sk-btn:hover:not(:disabled), button.sk-chip:hover:not(:disabled), .sk-seg button:hover, .sk-grouphead:hover { background: var(--dsw-alias-interactive-bg-hover-accent, var(--sk-tint)); } .sk-primary:hover:not(:disabled) { background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill)); } .sk-link:hover { text-decoration: underline; } }
-@container (max-width: 560px) { .sk-desc, .sk-narrow-hide { display: none; } .sk-actions { width: 100%; } }
+@container (max-width: 560px) { .sk-desc, .sk-narrow-hide { display: none; } .sk-actions { width: 100%; } .sk-head .sk-name { flex: 0 1 auto; } }
 `
 
     class ActionFailure extends Error {
@@ -1056,7 +1082,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
     }
 
     /** The skill store: search skills.sh or browse recommended repositories, then read one in the import page. */
-    function StorePanel({ ui, data, onOpen, onClose }) {
+    function StorePanel({ ui, data, hidden, onOpen, onClose }) {
       const { t } = ui
       const [query, setQuery] = React.useState('')
       const [results, setResults] = React.useState(null)
@@ -1073,10 +1099,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         setError(null)
         post(ROUTE, 'storeSearch', { query }).then(value => setResults(value.results), failure => setError(ui.describe(failure))).finally(() => setLoading(false))
       }
-      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('store.title'), onKeyDown: onEscape(onClose) },
+      return h('div', { className: 'sk-panel', hidden, role: 'group', 'aria-label': t('store.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('store.title')),
-          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
         h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (ready) search() } },
           h('input', { className: 'sk-input', value: query, autoFocus: true, spellCheck: false, placeholder: t('store.placeholder'), 'aria-label': t('store.title'), onChange: event => setQuery(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn sk-primary', disabled: loading || !ready }, t('store.search'))),
@@ -1106,7 +1132,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
     }
 
     /** The import list: skills in the Codex and Claude Code folders, or in one folder, to copy in. */
-    function ImportSkillsPanel({ ui, data, busy, onClose, onImport, start }) {
+    function ImportSkillsPanel({ ui, data, busy, onClose, onBack, onImport, start }) {
       const { t } = ui
       const [from, setFrom] = React.useState(start === undefined ? 'agents' : 'github')
       const [folder, setFolder] = React.useState('')
@@ -1120,6 +1146,9 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [upload, setUpload] = React.useState(null)
       const [over, setOver] = React.useState(false)
       const [address, setAddress] = React.useState(start?.repo ?? '')
+      const [filterText, setFilterText] = React.useState('')
+      const [pickMissing, setPickMissing] = React.useState(null)
+      const [finished, setFinished] = React.useState(null)
       const staged = from === 'upload' || from === 'github'
       const choicesFor = groups => new Map(groups.flatMap(group => group.items.map((item) => {
         const prefix = group.source === 'folder' || group.source === 'upload' || group.source === 'github' ? '' : `${group.source.split(/[-:]/)[0]}-`
@@ -1149,6 +1178,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       // Opened from the store: read that repository at once, with the chosen skill selected.
       React.useEffect(() => { if (start !== undefined) stageGithub(start.repo, start.pick) }, [])
       const items = sources === null ? [] : sources.groups.flatMap(group => group.items)
+      const needle = filterText.trim().toLowerCase()
+      const matches = item => needle === '' || `${item.name ?? ''} ${item.folder ?? ''} ${item.description ?? ''}`.toLowerCase().includes(needle)
       const selectable = item => ['new', 'rename', 'exists', 'updated'].includes(item.status)
       const selected = items.filter(item => selectable(item) && choices.get(item.path)?.on)
       const taken = new Set(data.skills.map(skill => skill.name))
@@ -1168,7 +1199,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         const next = new Map(previous)
         for (const group of sources?.groups ?? []) {
           for (const item of group.items) {
-            if (on && (item.status === 'new' || item.status === 'rename') && group.source !== 'codex-system') next.set(item.path, { ...next.get(item.path), on: true })
+            if (on && matches(item) && (item.status === 'new' || item.status === 'rename') && group.source !== 'codex-system') next.set(item.path, { ...next.get(item.path), on: true })
             if (!on) next.set(item.path, { ...next.get(item.path), on: false })
           }
         }
@@ -1203,11 +1234,13 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           setSources({ roots: data.roots, groups: [group] })
           const initial = choicesFor([group])
           // Coming from the store, only the skill that was asked for starts selected.
+          setPickMissing(null)
           if (pick !== undefined) {
-            for (const item of value.items) {
-              const wanted = item.name === pick || item.path.split(/[\\/]/).pop() === pick
-              if (wanted && (item.status === 'new' || item.status === 'rename')) initial.set(item.path, { ...initial.get(item.path), on: true })
+            const wanted = value.items.filter(item => item.name === pick || item.path.split(/[\\/]/).pop() === pick)
+            for (const item of wanted) {
+              if (item.status === 'new' || item.status === 'rename') initial.set(item.path, { ...initial.get(item.path), on: true })
             }
+            if (wanted.length === 0 && value.items.length > 0) setPickMissing(pick)
           }
           setChoices(initial)
           if (value.items.length === 0) setError(t('github.noSkill'))
@@ -1243,6 +1276,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           if (staged) {
             setSources(null)
             setUpload(null)
+            if (start !== undefined) setFinished(results)
           } else {
             void load(from === 'folder' ? folder : undefined)
           }
@@ -1294,18 +1328,21 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('span', { className: 'sk-caret', 'aria-hidden': true, style: open ? { transform: 'rotate(90deg)' } : undefined }, '›'),
           h('strong', null, title),
           h('span', { className: 'sk-hint sk-path' }, entry.dir),
-          entry.items.length > 0 ? h('span', { className: 'sk-badge' }, String(entry.items.length)) : null),
+          entry.items.length > 0 ? h('span', { className: 'sk-badge' }, needle === '' ? String(entry.items.length) : t('lib.filterCount', { shown: entry.items.filter(matches).length, total: entry.items.length })) : null),
           !open ? null : h(React.Fragment, null,
             system ? h('div', { className: 'sk-hint' }, t('lib.systemHint')) : null,
             !entry.exists ? h('div', { className: 'sk-hint' }, t('lib.groupMissing'))
               : entry.items.length === 0 ? h('div', { className: 'sk-hint' }, t('lib.groupEmpty'))
-                : entry.items.map(row)))
+                : entry.items.filter(matches).length === 0 ? h('div', { className: 'sk-hint' }, t('empty.filtered'))
+                  : entry.items.filter(matches).map(row)))
       }
-      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('lib.import'), onKeyDown: onEscape(onClose) },
+      const fromStore = start !== undefined
+      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': fromStore ? start.repo : t('lib.import'), onKeyDown: onEscape(fromStore ? onBack : onClose) },
         h('div', { className: 'sk-bar' },
-          h('strong', { className: 'sk-grow' }, t('lib.import')),
-          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
-        h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
+          fromStore ? h('button', { type: 'button', className: 'sk-btn is-ghost sk-back', onClick: onBack }, `‹ ${t('store.back')}`) : null,
+          h('strong', { className: `sk-grow${fromStore ? ' sk-path' : ''}` }, fromStore ? start.repo : t('lib.import')),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
+        fromStore ? null : h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
           key: name, type: 'button', role: 'radio', 'aria-checked': from === name,
           onClick: () => { setFrom(name); setSources(null); setUpload(null); setError(null); setReport([]) },
         }, t(`lib.importFrom.${name}`)))),
@@ -1319,26 +1356,40 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('label', { className: 'sk-btn' }, t('upload.pickZip'), h('input', { type: 'file', accept: '.zip,application/zip', hidden: true, onChange: onPick })),
           h('label', { className: 'sk-btn' }, t('upload.pickFolder'), h('input', { type: 'file', webkitdirectory: '', multiple: true, hidden: true, onChange: onPick })))) : null,
-        from === 'github' ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address.trim() !== '') stageGithub(address.trim()) } },
+        from === 'github' && !fromStore ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address.trim() !== '') stageGithub(address.trim()) } },
           h('input', { className: 'sk-input', value: address, spellCheck: false, placeholder: t('github.placeholder'), 'aria-label': t('lib.importFrom.github'), onChange: event => setAddress(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || address.trim() === '' }, t('github.read'))) : null,
         from === 'folder' ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (folder.trim() !== '') void load(folder.trim()) } },
           h('input', { className: 'sk-input', value: folder, spellCheck: false, placeholder: t('lib.folderPlaceholder'), 'aria-label': t('lib.importFrom.folder'), onChange: event => setFolder(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || folder.trim() === '' }, t('lib.read'))) : null,
         error === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, error),
+        pickMissing === null || sources === null ? null : h('div', { className: 'sk-note is-warn' }, t('store.pickMissing', { name: pickMissing })),
         loading && sources === null && from !== 'upload' ? h('div', { className: 'sk-skeleton', 'aria-busy': true }, from === 'github' ? h('div', { className: 'sk-hint' }, t('github.reading')) : null, h('span'), h('span')) : null,
+        finished !== null ? h('div', { className: 'sk-section' },
+          h('strong', null, finished.filter(result => result.status !== 'error').length === 1 ? t('store.doneOne') : t('store.doneTitle', { n: finished.filter(result => result.status !== 'error').length })),
+          h('ul', { className: 'sk-hint', style: { margin: 0, paddingLeft: 18 } }, finished.map(result => h('li', { key: result.path, className: result.status === 'error' ? 'is-error' : undefined },
+            result.status === 'error' ? t('lib.importFailure', { name: result.name ?? result.path, reason: ui.describeCode(result.code, result.details, result.error) }) : `${result.name} · ${result.path}`))),
+          h('div', { className: 'sk-hint' }, t('store.doneHint')),
+          h('div', { className: 'sk-bar sk-end' },
+            h('button', { type: 'button', className: 'sk-btn', onClick: onBack }, t('store.doneKeep')),
+            h('button', { type: 'button', className: 'sk-btn sk-primary', onClick: onClose }, t('store.doneClose')))) : null,
+        fromStore && sources === null && !loading && finished === null && (error !== null || report.length > 0)
+          ? h('div', { className: 'sk-bar' }, h('button', { type: 'button', className: 'sk-btn', onClick: () => stageGithub(start.repo, start.pick) }, t('store.retry'))) : null,
         sources === null ? null : h(React.Fragment, null,
-          items.some(selectable) ? h('div', { className: 'sk-bar' },
-            h('button', { type: 'button', className: 'sk-link', onClick: () => selectAll(true) }, t('lib.selectReady')),
-            h('button', { type: 'button', className: 'sk-link', onClick: () => selectAll(false) }, t('lib.selectNone'))) : null,
+          h('div', { className: 'sk-bar' },
+            items.length > 8 ? h('input', { type: 'search', className: 'sk-input', value: filterText, placeholder: t('lib.filter'), 'aria-label': t('lib.filter'), onChange: event => setFilterText(event.target.value) }) : null,
+            items.some(selectable) ? h(React.Fragment, null,
+              h('button', { type: 'button', className: 'sk-link', onClick: () => selectAll(true) }, t('lib.selectReady')),
+              h('button', { type: 'button', className: 'sk-link', onClick: () => selectAll(false) }, t('lib.selectNone'))) : null),
           sources.groups.map(group),
           report.length === 0 ? null : h('ul', { className: 'sk-hint', style: { margin: 0, paddingLeft: 18 } }, report.map(line => h('li', { key: line.key, className: line.error ? 'is-error' : undefined }, line.text))),
-          h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote')),
-          h('div', { className: 'sk-bar' },
-            h('label', { className: 'sk-hint', htmlFor: 'sk-import-where' }, t('lib.where')),
-            h(WhereSelect, { ui, roots: sources.roots, value: target, onChange: setTarget, id: 'sk-import-where' }),
-            h('span', { className: 'sk-grow' }),
-            h('button', { type: 'button', className: 'sk-btn sk-primary', disabled: !ready, onClick: submit }, t('lib.importSelected', { n: selected.length })))))
+          h('div', { className: 'sk-footer' },
+            h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote')),
+            h('div', { className: 'sk-bar' },
+              h('label', { className: 'sk-hint', htmlFor: 'sk-import-where' }, t('lib.where')),
+              h(WhereSelect, { ui, roots: sources.roots, value: target, onChange: setTarget, id: 'sk-import-where' }),
+              h('span', { className: 'sk-grow' }),
+              h('button', { type: 'button', className: 'sk-btn sk-primary', disabled: !ready, onClick: submit }, t('lib.importSelected', { n: selected.length }))))))
     }
 
     /** A byte count for a file list. */
@@ -1672,7 +1723,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('select', { className: 'sk-select', value: days, 'aria-label': t('usage.days', { n: days }), onChange: event => onDays(Number(event.target.value)) },
             [7, 30, 90, 365].map(n => h('option', { key: n, value: n }, t('usage.days', { n })))),
           h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: onRefresh }, t(loading ? 'usage.loading' : 'usage.refresh')),
-          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
         h('div', { className: 'sk-hint' }, t('usage.intro')),
         error === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, error),
         usage === null ? (loading ? h('div', { className: 'sk-skeleton', 'aria-busy': true }, h('span')) : null) : h(React.Fragment, null,
@@ -1727,7 +1778,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('trash.title')),
           data.trash.length > 0 ? h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: busy, onClick: () => setConfirm({ kind: 'empty' }) }, t('trash.emptyAll')) : null,
-          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
         confirm?.kind === 'empty' ? h(ConfirmBox, {
           ui, text: t('trash.confirmEmpty', { n: data.trash.length }), action: t('trash.emptyAll'), danger: true, busy,
           onCancel: () => setConfirm(null), onConfirm: () => ui.own('emptyTrash', {}, 'trash.emptied').then(() => setConfirm(null)),
@@ -1764,7 +1815,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('skipped.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('skipped.title')),
-          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
         h('div', { className: 'sk-hint' }, t('skipped.intro')),
         data.skipped.map(item => h('div', { key: item.path, className: 'sk-entry' },
           h('div', { className: 'sk-bar' },
@@ -2266,8 +2317,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('span', { className: 'sk-grow' }, t('skipped.note', { n: data.skipped.length })),
             h('button', { type: 'button', className: 'sk-btn', onClick: () => setPanel('skipped') }, t('skipped.show'))),
           data !== null && panel === 'create' ? h(CreateSkillPanel, { ui, data, busy: libBusy, onCancel: () => setPanel(null), onCreate: createSkill }) : null,
-          data !== null && panel === 'store' ? h(StorePanel, { ui, data, onOpen: openFromStore, onClose: () => setPanel(null) }) : null,
-          data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onImport: runImport, start: importStart }) : null,
+          data !== null && (panel === 'store' || (panel === 'import' && importStart !== undefined)) ? h(StorePanel, { ui, data, hidden: panel !== 'store', onOpen: openFromStore, onClose: () => setPanel(null) }) : null,
+          data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onBack: () => setPanel('store'), onImport: runImport, start: importStart }) : null,
           notice === null ? null : h('div', { className: `sk-note is-float ${notice.kind === 'done' ? 'is-done' : 'is-warn'}`, role: notice.kind === 'done' ? 'status' : 'alert' },
             h('span', { className: 'sk-grow' }, notice.text),
             notice.action === undefined ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: () => { const { run } = notice.action; show(null); run() } }, notice.action.label),
