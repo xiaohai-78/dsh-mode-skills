@@ -337,7 +337,15 @@ window.__ModuleLoader__.load({
       'err.skill-not-in-user-folder': '只有两个用户目录里的 Skill 才能移动',
       'err.alias-invalid': '显示名只能一行，最多 {max} 字',
       'err.tags-invalid': '最多 {max} 个标签，每个不超过 {chars} 字，不能含逗号',
-      'err.folder-relative': '请填项目文件夹的完整路径，例如 ~/code/my-app',
+      'err.folder-relative': '请填文件夹的完整路径，例如 ~/code/my-app',
+      'usage.allModes': '全部模式',
+      'usage.unusedInMode': '「{mode}」没用过的 Skill（{n}）',
+      'usage.unusedHintMode': '这段时间里这个模式的会话没加载过它们。想少占点上下文，可以在这个模式里关掉',
+      'usage.offHint': '另有 {n} 个在这个模式里没有、不能改或已经关了',
+      'lib.groupsEmpty': '这些位置没有找到 Skill：{list}',
+      'github.noAddress': '不知道地址？',
+      'project.recent': '最近用过',
+      'project.checking': '正在检查…',
       'usage.button': '使用统计',
       'usage.title': '使用统计',
       'usage.intro': '统计各模式的会话里每个 Skill 被加载了多少次：模型调用 skill 工具，或你输入 /名字。只读名称和时间，不读对话内容',
@@ -716,7 +724,15 @@ window.__ModuleLoader__.load({
       'err.skill-not-in-user-folder': 'Only skills in the two user folders can be moved',
       'err.alias-invalid': 'The display name must be one line of at most {max} characters',
       'err.tags-invalid': 'At most {max} tags of {chars} characters each, without commas',
-      'err.folder-relative': 'Give the full path of the project folder, e.g. ~/code/my-app',
+      'err.folder-relative': 'Give the full path of the folder, e.g. ~/code/my-app',
+      'usage.allModes': 'All modes',
+      'usage.unusedInMode': 'Skills "{mode}" never used ({n})',
+      'usage.unusedHintMode': 'This mode\'s sessions did not load these in this time. To save context, turn them off in this mode',
+      'usage.offHint': '{n} more are not in this mode, cannot be changed, or are already off',
+      'lib.groupsEmpty': 'No skills found in: {list}',
+      'github.noAddress': 'Not sure of the address?',
+      'project.recent': 'Recent',
+      'project.checking': 'Checking…',
       'usage.button': 'Usage',
       'usage.title': 'Usage',
       'usage.intro': 'How often each skill was loaded in each mode\'s sessions: the model calling the skill tool, or you typing /name. Only names and times are read, never message text',
@@ -1132,7 +1148,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
     }
 
     /** The import list: skills in the Codex and Claude Code folders, or in one folder, to copy in. */
-    function ImportSkillsPanel({ ui, data, busy, onClose, onBack, onImport, start }) {
+    function ImportSkillsPanel({ ui, data, busy, onClose, onBack, onOpenStore, onImport, start }) {
       const { t } = ui
       const [from, setFrom] = React.useState(start === undefined ? 'agents' : 'github')
       const [folder, setFolder] = React.useState('')
@@ -1359,6 +1375,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         from === 'github' && !fromStore ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address.trim() !== '') stageGithub(address.trim()) } },
           h('input', { className: 'sk-input', value: address, spellCheck: false, placeholder: t('github.placeholder'), 'aria-label': t('lib.importFrom.github'), onChange: event => setAddress(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || address.trim() === '' }, t('github.read'))) : null,
+        from === 'github' && !fromStore && sources === null ? h('div', { className: 'sk-hint' }, t('github.noAddress'), ' ', h('button', { type: 'button', className: 'sk-link', onClick: onOpenStore }, t('store.button'))) : null,
         from === 'folder' ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (folder.trim() !== '') void load(folder.trim()) } },
           h('input', { className: 'sk-input', value: folder, spellCheck: false, placeholder: t('lib.folderPlaceholder'), 'aria-label': t('lib.importFrom.folder'), onChange: event => setFolder(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || folder.trim() === '' }, t('lib.read'))) : null,
@@ -1381,7 +1398,9 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             items.some(selectable) ? h(React.Fragment, null,
               h('button', { type: 'button', className: 'sk-link', onClick: () => selectAll(true) }, t('lib.selectReady')),
               h('button', { type: 'button', className: 'sk-link', onClick: () => selectAll(false) }, t('lib.selectNone'))) : null),
-          sources.groups.map(group),
+          sources.groups.length > 1 ? sources.groups.filter(entry => entry.items.length > 0).map(group) : sources.groups.map(group),
+          sources.groups.length > 1 && sources.groups.some(entry => entry.items.length === 0)
+            ? h('div', { className: 'sk-hint' }, t('lib.groupsEmpty', { list: sources.groups.filter(entry => entry.items.length === 0).map(entry => `${entry.label ?? t(`lib.group.${entry.source}`)}（${entry.dir}）`).join(zhLike(ui.lang) ? '、' : ', ') })) : null,
           report.length === 0 ? null : h('ul', { className: 'sk-hint', style: { margin: 0, paddingLeft: 18 } }, report.map(line => h('li', { key: line.key, className: line.error ? 'is-error' : undefined }, line.text))),
           h('div', { className: 'sk-footer' },
             h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote')),
@@ -1696,6 +1715,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       return Math.abs(hours) < 24 ? rtf.format(hours, 'hour') : rtf.format(Math.round(hours / 24), 'day')
     }
 
+    /** Whether a language code is Chinese. */
+    function zhLike(lang) {
+      return lang === 'zh'
+    }
+
     /** "1 time" or "3 times". */
     function times(t, n) {
       return n === 1 ? t('usage.once') : t('usage.calls', { n })
@@ -1710,16 +1734,26 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
     function UsagePanel({ ui, data, usage, loading, error, days, onDays, onRefresh, onClose }) {
       const { t } = ui
       const usable = usableModes(data)
-      const [mode, setMode] = React.useState(() => usable[0]?.id ?? '')
+      const [scope, setScope] = React.useState('')
+      const [target, setTarget] = React.useState(() => usable[0]?.id ?? '')
       const [confirm, setConfirm] = React.useState(false)
-      const used = usage === null ? [] : Object.entries(usage.skills).map(([name, figures]) => ({ name, ...figures })).sort((a, b) => b.model + b.user - (a.model + a.user) || b.lastAt - a.lastAt)
-      const unused = usage === null ? [] : data.skills.filter(skill => !Object.hasOwn(usage.skills, skill.name))
-      const chosen = data.modes.find(entry => entry.id === mode)
-      const candidates = chosen === undefined ? [] : unused.filter(skill => cell(ui, data, skill, chosen).reason === undefined && ui.choiceOf(chosen, skill) !== 'off')
       const label = id => ui.modeName(data.modes.find(entry => entry.id === id) ?? { id })
+      // One mode chosen: what that mode loaded, and what it never did. All modes: what any mode loaded.
+      const figuresOf = entry => (scope === '' ? entry : entry.modes[scope])
+      const used = usage === null ? [] : Object.entries(usage.skills).map(([name, figures]) => ({ name, ...figures })).filter(entry => figuresOf(entry) !== undefined)
+        .sort((a, b) => figuresOf(b).model + figuresOf(b).user - (figuresOf(a).model + figuresOf(a).user) || figuresOf(b).lastAt - figuresOf(a).lastAt)
+      const unused = usage === null ? [] : data.skills.filter(skill => (scope === '' || skill.modes[scope] !== undefined)
+        && !(Object.hasOwn(usage.skills, skill.name) && (scope === '' || usage.skills[skill.name].modes[scope] !== undefined)))
+      const offIn = scope === '' ? target : scope
+      const chosen = data.modes.find(entry => entry.id === offIn)
+      const candidates = chosen === undefined ? [] : unused.filter(skill => cell(ui, data, skill, chosen).reason === undefined && ui.choiceOf(chosen, skill) !== 'off')
+      const scopeName = scope === '' ? '' : label(scope)
       return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('usage.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('usage.title')),
+          h('select', { className: 'sk-select', value: scope, 'aria-label': t('usage.allModes'), onChange: (event) => { setScope(event.target.value); setConfirm(false) } },
+            h('option', { value: '' }, t('usage.allModes')),
+            data.modes.filter(mode => mode.hasSkillTool).map(mode => h('option', { key: mode.id, value: mode.id }, ui.modeName(mode)))),
           h('select', { className: 'sk-select', value: days, 'aria-label': t('usage.days', { n: days }), onChange: event => onDays(Number(event.target.value)) },
             [7, 30, 90, 365].map(n => h('option', { key: n, value: n }, t('usage.days', { n })))),
           h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: onRefresh }, t(loading ? 'usage.loading' : 'usage.refresh')),
@@ -1735,38 +1769,75 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           used.length === 0 ? h('div', { className: 'sk-hint' }, t('usage.none')) : used.map(entry => h('div', { key: entry.name, className: 'sk-entry' },
             h('div', { className: 'sk-bar' },
               h('span', { className: 'sk-name sk-grow' }, entry.name),
-              h('strong', null, times(t, entry.model + entry.user)),
-              h('span', { className: 'sk-hint' }, t('usage.split', { model: entry.model, user: entry.user })),
-              h('span', { className: 'sk-hint' }, t('usage.last', { when: ago(ui.lang, entry.lastAt) }))),
-            h('div', { className: 'sk-modes' }, Object.entries(entry.modes).sort(([, a], [, b]) => b.model + b.user - (a.model + a.user)).map(([id, figures]) => h('span', { key: id, className: 'sk-chip' }, t('usage.inMode', { mode: label(id), n: figures.model + figures.user })))))),
+              h('strong', null, times(t, figuresOf(entry).model + figuresOf(entry).user)),
+              h('span', { className: 'sk-hint' }, t('usage.split', { model: figuresOf(entry).model, user: figuresOf(entry).user })),
+              h('span', { className: 'sk-hint' }, t('usage.last', { when: ago(ui.lang, figuresOf(entry).lastAt) }))),
+            scope !== '' ? null : h('div', { className: 'sk-modes' }, Object.entries(entry.modes).sort(([, a], [, b]) => b.model + b.user - (a.model + a.user)).map(([id, figures]) => h('span', { key: id, className: 'sk-chip' }, t('usage.inMode', { mode: label(id), n: figures.model + figures.user })))))),
           h('div', { className: 'sk-section' },
-            h('strong', null, t('usage.unused', { n: unused.length })),
+            h('strong', null, scope === '' ? t('usage.unused', { n: unused.length }) : t('usage.unusedInMode', { mode: scopeName, n: unused.length })),
             unused.length === 0 ? h('div', { className: 'sk-hint' }, t('usage.noneUnused')) : h(React.Fragment, null,
-              h('div', { className: 'sk-hint' }, t('usage.unusedHint')),
+              h('div', { className: 'sk-hint' }, t(scope === '' ? 'usage.unusedHint' : 'usage.unusedHintMode')),
               h('div', { className: 'sk-modes' }, unused.map(skill => h('span', { key: skill.name, className: 'sk-chip' }, skill.name))),
               usable.length === 0 ? null : h('div', { className: 'sk-bar' },
-                h('select', { className: 'sk-select', value: mode, 'aria-label': t('usage.offIn'), onChange: (event) => { setMode(event.target.value); setConfirm(false) } },
+                scope !== '' ? null : h('select', { className: 'sk-select', value: target, 'aria-label': t('usage.offIn'), onChange: (event) => { setTarget(event.target.value); setConfirm(false) } },
                   usable.map(entry => h('option', { key: entry.id, value: entry.id }, ui.modeName(entry)))),
-                h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: candidates.length === 0 || ui.busy.has('bulk'), onClick: () => setConfirm(true) }, `${t('usage.offIn')} (${candidates.length})`)),
+                h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: candidates.length === 0 || ui.busy.has('bulk'), onClick: () => setConfirm(true) }, `${scope === '' ? t('usage.offIn') : t('toggle.on', { mode: scopeName })} (${candidates.length})`),
+                unused.length > candidates.length ? h('span', { className: 'sk-hint' }, t('usage.offHint', { n: unused.length - candidates.length })) : null),
               confirm && chosen !== undefined ? h(ConfirmBox, {
                 ui, text: t('usage.confirmOff', { mode: ui.modeName(chosen), n: candidates.length }), action: t('usage.offIn'), danger: true, busy: ui.busy.has('bulk'),
                 onCancel: () => setConfirm(false), onConfirm: () => { setConfirm(false); ui.setMany(candidates.map(skill => ({ mode: chosen, skill, target: 'off' }))) },
               }) : null))))
     }
 
-    /** The project folder whose own skills the list also shows. */
+    /** The project folders used before, newest first. */
+    const RECENT_KEY = 'dsh-mode-skills.recent-projects'
+    function recentProjects() {
+      try {
+        const value = JSON.parse(window.localStorage.getItem(RECENT_KEY) ?? '[]')
+        return Array.isArray(value) ? value.filter(entry => typeof entry === 'string').slice(0, 5) : []
+      } catch {
+        // Storage can be blocked or hold something else; the list then starts empty.
+        return []
+      }
+    }
+    function rememberRecent(path) {
+      try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify([path, ...recentProjects().filter(entry => entry !== path)].slice(0, 5)))
+      } catch {
+        // Storage can be blocked; the folder is then not offered next time.
+      }
+    }
+
+    /** The project folder whose own skills the list also shows; a folder is checked before it is used. */
     function ProjectPanel({ ui, project, onApply, onClose }) {
       const { t } = ui
       const [text, setText] = React.useState(project)
-      return h('form', { className: 'sk-panel', 'aria-label': t('project.title'), onKeyDown: onEscape(onClose), onSubmit: (event) => { event.preventDefault(); onApply(text) } },
+      const [error, setError] = React.useState(null)
+      const [checking, setChecking] = React.useState(false)
+      const [recent] = React.useState(recentProjects)
+      const apply = (value) => {
+        const folder = value.trim()
+        if (folder === '') return
+        setChecking(true)
+        setError(null)
+        post(ROUTE, 'checkProject', { cwd: folder }).then(() => {
+          rememberRecent(folder)
+          onApply(folder)
+        }, failure => setError(ui.describe(failure))).finally(() => setChecking(false))
+      }
+      return h('form', { className: 'sk-panel', 'aria-label': t('project.title'), onKeyDown: onEscape(onClose), onSubmit: (event) => { event.preventDefault(); apply(text) } },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('project.title')),
-          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
         h('div', { className: 'sk-hint' }, t('project.hint')),
         h('div', { className: 'sk-bar' },
-          h('input', { className: 'sk-input', value: text, autoFocus: true, spellCheck: false, placeholder: t('project.placeholder'), 'aria-label': t('project.title'), onChange: event => setText(event.target.value) }),
-          h('button', { type: 'submit', className: 'sk-btn sk-primary', disabled: text.trim() === '' }, t('project.apply')),
-          project === '' ? null : h('button', { type: 'button', className: 'sk-btn', onClick: () => onApply('') }, t('project.clear'))))
+          h('input', { className: 'sk-input', value: text, autoFocus: true, spellCheck: false, placeholder: t('project.placeholder'), 'aria-label': t('project.title'), 'aria-invalid': error !== null, onChange: (event) => { setText(event.target.value); setError(null) } }),
+          h('button', { type: 'submit', className: 'sk-btn sk-primary', disabled: checking || text.trim() === '' }, t(checking ? 'project.checking' : 'project.apply')),
+          project === '' ? null : h('button', { type: 'button', className: 'sk-btn', onClick: () => onApply('') }, t('project.clear'))),
+        error === null ? null : h('div', { className: 'sk-hint is-error', role: 'alert' }, error),
+        recent.length === 0 ? null : h('div', { className: 'sk-bar' },
+          h('span', { className: 'sk-hint' }, t('project.recent')),
+          recent.map(path => h('button', { key: path, type: 'button', className: 'sk-chip', title: path, disabled: checking, onClick: () => { setText(path); apply(path) } }, path.split(/[\\/]/).filter(Boolean).pop() ?? path))))
     }
 
     /** The bin: deleted skills to restore or remove for good. */
@@ -2318,7 +2389,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('button', { type: 'button', className: 'sk-btn', onClick: () => setPanel('skipped') }, t('skipped.show'))),
           data !== null && panel === 'create' ? h(CreateSkillPanel, { ui, data, busy: libBusy, onCancel: () => setPanel(null), onCreate: createSkill }) : null,
           data !== null && (panel === 'store' || (panel === 'import' && importStart !== undefined)) ? h(StorePanel, { ui, data, hidden: panel !== 'store', onOpen: openFromStore, onClose: () => setPanel(null) }) : null,
-          data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onBack: () => setPanel('store'), onImport: runImport, start: importStart }) : null,
+          data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onBack: () => setPanel('store'), onOpenStore: () => setPanel('store'), onImport: runImport, start: importStart }) : null,
           notice === null ? null : h('div', { className: `sk-note is-float ${notice.kind === 'done' ? 'is-done' : 'is-warn'}`, role: notice.kind === 'done' ? 'status' : 'alert' },
             h('span', { className: 'sk-grow' }, notice.text),
             notice.action === undefined ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: () => { const { run } = notice.action; show(null); run() } }, notice.action.label),

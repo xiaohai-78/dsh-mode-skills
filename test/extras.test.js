@@ -313,3 +313,16 @@ test('searches the store once for a repeated text, and lists the shipped reposit
     globalThis.fetch = original
   }
 })
+
+test('refuses a relative or missing folder for the project and for the import list, and checks a project before it is used', async () => {
+  const { value, call } = await mount()
+  const project = join(home, 'work', 'checked')
+  await mkdir(project, { recursive: true })
+  assert.deepEqual(await value('checkProject', { cwd: project }), { path: join('~', 'work', 'checked') })
+  assert.equal((await call('checkProject', { cwd: 'relative/x' })).code, 'folder-relative')
+  assert.equal((await call('checkProject', { cwd: join(home, 'nope') })).code, 'folder-missing')
+  assert.equal((await call('checkProject', {})).code, 'bad-request')
+  assert.equal((await call('skillSources', { folder: 'relative/dir' })).code, 'folder-relative')
+  assert.equal((await call('skillSources', { folder: join(home, 'nope') })).code, 'folder-missing')
+  assert.equal((await value('skillSources', { folder: project })).groups[0].items.length, 0)
+})

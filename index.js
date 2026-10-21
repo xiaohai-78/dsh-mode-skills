@@ -148,6 +148,11 @@ const ACTIONS = {
   checkUpdates: (m, body) => checkUpdates(m, body),
   updateGithub: (m, body) => updateGithub(m, body),
   clearModes: (m, body) => clearModes(m, body),
+  checkProject: async (m, body) => {
+    const dir = await checkFolder(body.cwd)
+    if (dir === undefined) throw new ActionError('bad-request', 'Give a project folder')
+    return { path: displayPath(dir) }
+  },
   usage: (m, body) => usageOf(m, body),
   storeSearch: (m, body) => storeSearch(m, body),
   storeIndex: async () => ({ repos: await storeIndex() }),
@@ -733,10 +738,7 @@ async function candidateFor(state, dir, source, github) {
  */
 async function skillSources(m, body) {
   const state = await m.store.read()
-  const folder = typeof body.folder === 'string' && body.folder.trim() !== '' ? expandHome(body.folder) : undefined
-  if (folder !== undefined && !(await stat(folder).then(info => info.isDirectory(), () => false))) {
-    throw new ActionError('folder-missing', `No folder at ${folder}`, { path: displayPath(folder) })
-  }
+  const folder = await checkFolder(typeof body.folder === 'string' ? body.folder : undefined)
   const roots = folder === undefined ? [...importRoots(), ...await agentRoots()] : [{ source: 'folder', dir: folder }]
   const groups = await sourceGroups(state, roots)
   const shown = skillRoots()
@@ -1066,6 +1068,7 @@ async function readOrigin(m, upload) {
  * @param {unknown} folder - a path the user typed, or nothing for no project.
  * @returns {Promise<string | undefined>} the folder, or undefined when none was given.
  * @throws {ActionError} `folder-relative` for a path that does not start from the root or home folder, `folder-missing`.
+ *   Used for the project folder and for a folder to import skills from.
  */
 async function checkFolder(folder) {
   if (folder === undefined || folder === null || folder === '') return undefined
