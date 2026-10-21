@@ -240,7 +240,8 @@ test('lists the skills of a project folder without adding them to the global lis
   const { utimes } = await import('node:fs/promises')
   await utimes(broken, Date.now() / 1000 - 60, Date.now() / 1000 - 60)
   const skipped = (await value('list', { cwd: project, refresh: true })).skipped
-  assert.deepEqual(skipped.map(item => [item.root, item.folder, item.reason]), [['project-dsh', 'broken', 'yaml']])
+  // Skills other tests left in the shared home count as unlisted once they are older than the settle time, so only the project's are compared.
+  assert.deepEqual(skipped.filter(item => item.root.startsWith('project-')).map(item => [item.root, item.folder, item.reason]), [['project-dsh', 'broken', 'yaml']])
   assert.equal((await value('readSkipped', { path: broken, cwd: project })).problem.reason, 'yaml')
   assert.equal((await call('readSkipped', { path: broken })).code, 'bad-request', 'a project file needs its project')
 })
