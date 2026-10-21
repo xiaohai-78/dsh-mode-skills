@@ -137,7 +137,7 @@ window.__ModuleLoader__.load({
       'lib.conflictReplace': '覆盖现有 Skill（先存一个版本）',
       'lib.updatedHint': '重新导入会覆盖「{name}」，当前文件会先存成一个版本',
       'lib.nameDuplicate': '和另一个要导入的 Skill 重名',
-      'lib.selectReady': '全选可导入',
+      'lib.selectReady': '全选新 Skill',
       'lib.selectNone': '全不选',
       'lib.importSelected': '导入所选（{n}）',
       'lib.copyNote': '导入是复制：来源之后有变化，这里和 Skill 列表都会提示，可以一键重新导入',
@@ -346,6 +346,15 @@ window.__ModuleLoader__.load({
       'github.noAddress': '不知道地址？',
       'project.recent': '最近用过',
       'project.checking': '正在检查…',
+      'mode.noSkills': '「{mode}」不加载 Skill，所以这里没有可以设置的项',
+      'mode.noSkillsOption': '{mode} · 不加载 Skill',
+      'github.updating': '正在更新 {n} 个 Skill…',
+      'edit.dirty': '未保存',
+      'edit.draft': '有未保存的修改',
+      'edit.discard': '放弃修改',
+      'edit.discardConfirm': '放弃对「{name}」的未保存修改？',
+      'edit.keepEditing': '继续编辑',
+      'lib.defaultOn': '新导入的 Skill 在每个模式里默认都是开的，会占用上下文；之后可以按模式调整',
       'usage.button': '使用统计',
       'usage.title': '使用统计',
       'usage.intro': '统计各模式的会话里每个 Skill 被加载了多少次：模型调用 skill 工具，或你输入 /名字。只读名称和时间，不读对话内容',
@@ -524,7 +533,7 @@ window.__ModuleLoader__.load({
       'lib.conflictReplace': 'Replace the existing skill (saves a version first)',
       'lib.updatedHint': 'Importing again replaces {name}; its current files are saved as a version first',
       'lib.nameDuplicate': 'Another skill being imported has this name',
-      'lib.selectReady': 'Select all ready',
+      'lib.selectReady': 'Select all new',
       'lib.selectNone': 'Select none',
       'lib.importSelected': 'Import selected ({n})',
       'lib.copyNote': 'Imports are copies: when a source changes later, this list and the skill list say so, and you can import it again',
@@ -733,6 +742,15 @@ window.__ModuleLoader__.load({
       'github.noAddress': 'Not sure of the address?',
       'project.recent': 'Recent',
       'project.checking': 'Checking…',
+      'mode.noSkills': '"{mode}" does not load skills, so there is nothing to set here',
+      'mode.noSkillsOption': '{mode} · does not load skills',
+      'github.updating': 'Updating {n} skills…',
+      'edit.dirty': 'Unsaved',
+      'edit.draft': 'Has unsaved changes',
+      'edit.discard': 'Discard changes',
+      'edit.discardConfirm': 'Discard the unsaved changes to "{name}"?',
+      'edit.keepEditing': 'Keep editing',
+      'lib.defaultOn': 'New skills are On in every mode by default and take up context; adjust them per mode afterwards',
       'usage.button': 'Usage',
       'usage.title': 'Usage',
       'usage.intro': 'How often each skill was loaded in each mode\'s sessions: the model calling the skill tool, or you typing /name. Only names and times are read, never message text',
@@ -856,6 +874,9 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-panel > .sk-field, .sk-section > .sk-field { flex: none; }
 .sk-hint.is-error, .sk-error { color: var(--dsw-alias-state-danger-primary, #d93025); }
 .sk-hint.is-warn { color: var(--dsw-alias-state-warn-primary); }
+.sk-panel:focus { outline: none; }
+.sk :is(button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary); outline-offset: 2px; }
+.sk-seg button:focus-visible { outline-offset: -2px; }
 .sk-panel[hidden] { display: none; }
 .sk-back { padding-left: 4px; margin-left: -4px; }
 .sk-footer { position: sticky; bottom: 0; z-index: 2; display: flex; flex-direction: column; gap: 8px; margin: 0 -16px -14px; padding: 12px 16px 14px; border-top: .5px solid var(--dsw-alias-border-l3); border-radius: 0 0 var(--sk-r-md) var(--sk-r-md); background: var(--dsw-alias-bg-layer-1); }
@@ -1035,6 +1056,30 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       }
     }
 
+    /**
+     * Arrow keys move between the buttons of a `role=radiogroup` strip without choosing one; Enter or Space chooses,
+     * so moving through a strip never changes a setting by itself.
+     */
+    function radioKeys(event) {
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key]
+      if (step === undefined) return
+      const radios = [...event.currentTarget.querySelectorAll('[role=radio]:not(:disabled)')]
+      const at = radios.indexOf(document.activeElement)
+      if (at < 0) return
+      event.preventDefault()
+      radios[(at + step + radios.length) % radios.length].focus()
+    }
+
+    /** A ref for a panel's root: the panel takes focus when it opens, unless something inside it already has. */
+    function usePanelFocus() {
+      const ref = React.useRef(null)
+      React.useEffect(() => {
+        const node = ref.current
+        if (node !== null && !node.contains(document.activeElement)) node.focus({ preventScroll: true })
+      }, [])
+      return ref
+    }
+
     /** The folder menu for new skills: DSH's own folder or the one shared with other agent tools. */
     function WhereSelect({ ui, roots, value, onChange, id }) {
       const { t } = ui
@@ -1110,10 +1155,13 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       React.useEffect(() => {
         post(ROUTE, 'storeIndex', {}).then(value => setRepos(value.repos), () => setRepos([]))
       }, [])
+      const searchSeq = React.useRef(0)
       const search = () => {
+        const seq = ++searchSeq.current
         setLoading(true)
         setError(null)
-        post(ROUTE, 'storeSearch', { query }).then(value => setResults(value.results), failure => setError(ui.describe(failure))).finally(() => setLoading(false))
+        // Only the newest search counts, so a slow answer to an earlier one cannot replace it.
+        post(ROUTE, 'storeSearch', { query }).then((value) => { if (seq === searchSeq.current) setResults(value.results) }, (failure) => { if (seq === searchSeq.current) setError(ui.describe(failure)) }).finally(() => { if (seq === searchSeq.current) setLoading(false) })
       }
       return h('div', { className: 'sk-panel', hidden, role: 'group', 'aria-label': t('store.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
@@ -1353,13 +1401,16 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
                   : entry.items.filter(matches).map(row)))
       }
       const fromStore = start !== undefined
-      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': fromStore ? start.repo : t('lib.import'), onKeyDown: onEscape(fromStore ? onBack : onClose) },
+      const panelRef = usePanelFocus()
+      const zipInput = React.useRef(null)
+      const folderInput = React.useRef(null)
+      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': fromStore ? start.repo : t('lib.import'), onKeyDown: onEscape(fromStore ? onBack : onClose) },
         h('div', { className: 'sk-bar' },
           fromStore ? h('button', { type: 'button', className: 'sk-btn is-ghost sk-back', onClick: onBack }, `‹ ${t('store.back')}`) : null,
           h('strong', { className: `sk-grow${fromStore ? ' sk-path' : ''}` }, fromStore ? start.repo : t('lib.import')),
           h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
-        fromStore ? null : h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
-          key: name, type: 'button', role: 'radio', 'aria-checked': from === name,
+        fromStore ? null : h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import'), onKeyDown: radioKeys }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
+          key: name, type: 'button', role: 'radio', 'aria-checked': from === name, tabIndex: from === name ? 0 : -1,
           onClick: () => { setFrom(name); setSources(null); setUpload(null); setError(null); setReport([]) },
         }, t(`lib.importFrom.${name}`)))),
         from === 'upload' && sources === null ? h('div', {
@@ -1370,8 +1421,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         },
         h('div', null, loading ? t('upload.reading') : t('upload.drop')),
         h('div', { className: 'sk-bar' },
-          h('label', { className: 'sk-btn' }, t('upload.pickZip'), h('input', { type: 'file', accept: '.zip,application/zip', hidden: true, onChange: onPick })),
-          h('label', { className: 'sk-btn' }, t('upload.pickFolder'), h('input', { type: 'file', webkitdirectory: '', multiple: true, hidden: true, onChange: onPick })))) : null,
+          h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => zipInput.current?.click() }, t('upload.pickZip')),
+          h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => folderInput.current?.click() }, t('upload.pickFolder')),
+          h('input', { ref: zipInput, type: 'file', accept: '.zip,application/zip', hidden: true, onChange: onPick }),
+          h('input', { ref: folderInput, type: 'file', webkitdirectory: '', multiple: true, hidden: true, onChange: onPick }))) : null,
         from === 'github' && !fromStore ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address.trim() !== '') stageGithub(address.trim()) } },
           h('input', { className: 'sk-input', value: address, spellCheck: false, placeholder: t('github.placeholder'), 'aria-label': t('lib.importFrom.github'), onChange: event => setAddress(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || address.trim() === '' }, t('github.read'))) : null,
@@ -1403,12 +1456,32 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             ? h('div', { className: 'sk-hint' }, t('lib.groupsEmpty', { list: sources.groups.filter(entry => entry.items.length === 0).map(entry => `${entry.label ?? t(`lib.group.${entry.source}`)}（${entry.dir}）`).join(zhLike(ui.lang) ? '、' : ', ') })) : null,
           report.length === 0 ? null : h('ul', { className: 'sk-hint', style: { margin: 0, paddingLeft: 18 } }, report.map(line => h('li', { key: line.key, className: line.error ? 'is-error' : undefined }, line.text))),
           h('div', { className: 'sk-footer' },
-            h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote')),
+            h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote'), ' ', t('lib.defaultOn')),
             h('div', { className: 'sk-bar' },
               h('label', { className: 'sk-hint', htmlFor: 'sk-import-where' }, t('lib.where')),
               h(WhereSelect, { ui, roots: sources.roots, value: target, onChange: setTarget, id: 'sk-import-where' }),
               h('span', { className: 'sk-grow' }),
               h('button', { type: 'button', className: 'sk-btn sk-primary', disabled: !ready, onClick: submit }, t('lib.importSelected', { n: selected.length }))))))
+    }
+
+    /** Unsaved SKILL.md edits, kept for the tab so a collapsed row or another page does not lose them. */
+    const DRAFT_PREFIX = 'dsh-mode-skills.draft:'
+    function readDraft(name) {
+      try {
+        const value = JSON.parse(window.sessionStorage.getItem(`${DRAFT_PREFIX}${name}`) ?? 'null')
+        return value !== null && typeof value.text === 'string' && typeof value.base === 'string' ? { text: value.text, base: value.base } : null
+      } catch {
+        // Storage can be blocked or hold something else; there is then no draft.
+        return null
+      }
+    }
+    function writeDraft(name, editor) {
+      try {
+        if (editor !== null && editor.text !== editor.base) window.sessionStorage.setItem(`${DRAFT_PREFIX}${name}`, JSON.stringify({ text: editor.text, base: editor.base }))
+        else window.sessionStorage.removeItem(`${DRAFT_PREFIX}${name}`)
+      } catch {
+        // Storage can be blocked or full; the edit is then not kept.
+      }
     }
 
     /** A byte count for a file list. */
@@ -1427,12 +1500,31 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [newPath, setNewPath] = React.useState('')
       const refresh = () => post(ROUTE, 'listSkillFiles', { skill: skill.name }).then(setListing, error => ui.fail(error))
       React.useEffect(() => { if (open) void refresh() }, [open, skill.path])
-      const edit = rel => post(ROUTE, 'readSkillAsset', { skill: skill.name, rel }).then((value) => {
+      const dirty = editor !== null && editor.text !== editor.base
+      const load = rel => post(ROUTE, 'readSkillAsset', { skill: skill.name, rel }).then((value) => {
         const text = value.text.replace(/\r\n?/g, '\n')
+        setConfirm(null)
         setEditor({ rel, text, base: text, editable: value.editable })
       }, error => ui.fail(error))
+      /** Open a file; unsaved changes to the one open are confirmed first. */
+      const edit = (rel) => {
+        if (dirty) setConfirm({ kind: 'discard', then: rel })
+        else void load(rel)
+      }
+      /** Close the editor; unsaved changes are confirmed first. */
+      const closeEditor = () => {
+        if (dirty) setConfirm({ kind: 'discard', then: null })
+        else { setConfirm(null); setEditor(null) }
+      }
+      const discard = () => {
+        const next = confirm.then
+        setConfirm(null)
+        if (next === null) setEditor(null)
+        else void load(next)
+      }
       const save = overwrite => post(ROUTE, 'writeSkillAsset', { skill: skill.name, rel: editor.rel, text: editor.text, ...overwrite || editor.create ? {} : { base: editor.base }, ...editor.create ? { create: true } : {} }).then(() => {
         ui.notify('done', t(editor.create ? 'files.created' : 'files.saved'))
+        setConfirm(null)
         setEditor(null)
         return refresh()
       }, (failure) => {
@@ -1477,12 +1569,19 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             listing.skipped.length > 0 ? h('div', { className: 'sk-hint' }, t('files.skippedLinks', { n: listing.skipped.length })) : null,
             listing.editable ? h('form', {
               className: 'sk-bar',
-              onSubmit: (event) => { event.preventDefault(); if (newPath.trim() !== '') { setEditor({ rel: newPath.trim(), text: '', base: '', create: true, editable: true }); setNewPath('') } },
+              onSubmit: (event) => {
+                event.preventDefault()
+                if (newPath.trim() === '') return
+                if (dirty) setConfirm({ kind: 'discard', then: null })
+                else { setConfirm(null); setEditor({ rel: newPath.trim(), text: '', base: '', create: true, editable: true }); setNewPath('') }
+              },
             },
             h('input', { className: 'sk-input', value: newPath, spellCheck: false, placeholder: t('files.newPlaceholder'), 'aria-label': t('files.new'), onChange: event => setNewPath(event.target.value) }),
             h('button', { type: 'submit', className: 'sk-btn', disabled: newPath.trim() === '' }, t('files.new'))) : null),
-          editor === null ? null : h('div', { className: 'sk-section', role: 'group', 'aria-label': editor.rel, onKeyDown: onEscape(() => setEditor(null)) },
-            h('span', { className: 'sk-label sk-path' }, editor.rel),
+          editor === null ? null : h('div', { className: 'sk-section', role: 'group', 'aria-label': editor.rel, onKeyDown: onEscape(closeEditor) },
+            h('div', { className: 'sk-bar' },
+              h('span', { className: 'sk-label sk-path sk-grow' }, editor.rel),
+              dirty ? h('span', { className: 'sk-badge is-warn' }, t('edit.dirty')) : null),
             h('textarea', { className: 'sk-input sk-textarea', rows: 12, value: editor.text, spellCheck: false, readOnly: !editor.editable, autoFocus: editor.create === true, 'aria-label': editor.rel, onChange: event => setEditor(previous => ({ ...previous, text: event.target.value })) }),
             editor.conflict === undefined ? null : h('div', { className: 'sk-confirm', role: 'alert' },
               h('div', null, t('lib.conflict')),
@@ -1490,13 +1589,17 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
               h('div', { className: 'sk-bar' },
                 h('button', { type: 'button', className: 'sk-btn', onClick: () => setEditor(previous => ({ rel: previous.rel, editable: previous.editable, text: previous.conflict, base: previous.conflict })) }, t('lib.loadLatest')),
                 h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: busy, onClick: () => save(true) }, t('lib.overwrite')))),
-            confirm?.kind === 'delete' ? h(ConfirmBox, {
+            confirm?.kind === 'delete' && confirm.rel === editor.rel ? h(ConfirmBox, {
               ui, text: t('files.confirmDelete', { rel: editor.rel }), action: t('files.delete'), danger: true, busy,
               onCancel: () => setConfirm(null), onConfirm: remove,
             }) : null,
+            confirm?.kind === 'discard' ? h(ConfirmBox, {
+              ui, text: t('edit.discardConfirm', { name: editor.rel }), action: t('edit.discard'), danger: true, busy,
+              onCancel: () => setConfirm(null), onConfirm: discard,
+            }) : null,
             h('div', { className: 'sk-bar sk-end' },
-              editor.editable && editor.create !== true ? h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: busy, onClick: () => setConfirm({ kind: 'delete' }) }, t('files.delete')) : null,
-              h('button', { type: 'button', className: 'sk-btn', onClick: () => setEditor(null) }, t('files.close')),
+              editor.editable && editor.create !== true ? h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: busy, onClick: () => setConfirm({ kind: 'delete', rel: editor.rel }) }, t('files.delete')) : null,
+              h('button', { type: 'button', className: 'sk-btn', onClick: closeEditor }, t('files.close')),
               editor.editable ? h('button', { type: 'button', className: 'sk-btn sk-primary', disabled: busy || (editor.create !== true && editor.text === editor.base), onClick: () => save(false) }, t('lib.save')) : null))))
     }
 
@@ -1531,8 +1634,18 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [note, setNote] = React.useState('')
       const [confirm, setConfirm] = React.useState(null)
       const [preview, setPreview] = React.useState(null)
-      const [editor, setEditor] = React.useState(null)
+      const [draft] = React.useState(() => readDraft(skill.name))
+      const [editor, setEditor] = React.useState(draft)
+      const [restored, setRestored] = React.useState(draft !== null)
+      const [discarding, setDiscarding] = React.useState(false)
       const [trashing, setTrashing] = React.useState(false)
+      const dirty = editor !== null && editor.text !== editor.base
+      React.useEffect(() => { writeDraft(skill.name, editor) }, [editor])
+      /** Leave the editor; unsaved changes are confirmed first. */
+      const leaveEditor = () => {
+        if (dirty) setDiscarding(true)
+        else setEditor(null)
+      }
       const versions = skill.versions ?? []
       const origin = skill.imported
       const showVersion = (version) => {
@@ -1554,7 +1667,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         void openEditor()
       }, [autoEdit])
       const saveEditor = overwrite => ui.run('writeSkillFile', { skill: skill.name, text: editor.text, ...overwrite ? {} : { base: editor.base } }, 'lib.saved')
-        .then((ok) => { if (ok) setEditor(null) }, (failure) => {
+        .then((ok) => { if (ok) { setEditor(null); setRestored(false) } }, (failure) => {
           if (failure?.code === 'skill-conflict') setEditor(previous => ({ ...previous, conflict: failure.details?.current ?? '' }))
         })
       return h(React.Fragment, null,
@@ -1581,7 +1694,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           onCancel: () => setTrashing(false), onConfirm: () => ui.trashSkill(skill.name).then(() => setTrashing(false)),
         }) : null,
         skill.path === undefined || skill.exists === false || editor !== null ? null : h(SkillFiles, { ui, skill }),
-        editor === null ? null : h('div', { className: 'sk-section' },
+        editor === null ? null : h('div', { className: 'sk-section', onKeyDown: onEscape(leaveEditor) },
+          h('div', { className: 'sk-bar' },
+            h('span', { className: 'sk-label sk-grow' }, t('lib.edit')),
+            dirty ? h('span', { className: 'sk-badge is-warn' }, t('edit.dirty')) : null),
+          restored ? h('div', { className: 'sk-hint is-warn' }, t('edit.draft')) : null,
           h('textarea', { className: 'sk-input sk-textarea', rows: 14, value: editor.text, spellCheck: false, 'aria-label': t('lib.edit'), onChange: event => setEditor(previous => ({ ...previous, text: event.target.value })) }),
           editor.conflict === undefined ? null : h('div', { className: 'sk-confirm', role: 'alert' },
             h('div', null, t('lib.conflict')),
@@ -1590,8 +1707,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
               h('button', { type: 'button', className: 'sk-btn', onClick: () => setEditor({ text: editor.conflict, base: editor.conflict }) }, t('lib.loadLatest')),
               h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: busy, onClick: () => saveEditor(true) }, t('lib.overwrite')))),
           h('div', { className: 'sk-hint' }, t('lib.editHint')),
+          discarding ? h(ConfirmBox, {
+            ui, text: t('edit.discardConfirm', { name: skill.name }), action: t('edit.discard'), danger: true, busy,
+            onCancel: () => setDiscarding(false), onConfirm: () => { setDiscarding(false); setRestored(false); setEditor(null) },
+          }) : null,
           h('div', { className: 'sk-bar sk-end' },
-            h('button', { type: 'button', className: 'sk-btn', onClick: () => setEditor(null) }, t('lib.cancel')),
+            h('button', { type: 'button', className: 'sk-btn', onClick: leaveEditor }, t('lib.cancel')),
             h('button', { type: 'button', className: 'sk-btn sk-primary', disabled: busy || editor.text === editor.base || editor.text.trim() === '', onClick: () => saveEditor(false) }, t('lib.save')))),
         h('div', { className: 'sk-section' },
           h('span', { className: 'sk-label' }, t('lib.versions')),
@@ -1636,10 +1757,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         if (current.reason !== undefined) return h('div', { key: mode.id, className: 'sk-moderow' }, name, state, h('span', { className: 'sk-hint' }, current.reason))
         const choice = ui.choiceOf(mode, skill)
         return h('div', { key: mode.id, className: 'sk-moderow' }, name,
-          h('div', { className: 'sk-seg is-small', role: 'radiogroup', 'aria-label': ui.modeName(mode) }, MODE_CHOICES.map((target) => {
+          h('div', { className: 'sk-seg is-small', role: 'radiogroup', 'aria-label': ui.modeName(mode), onKeyDown: radioKeys }, MODE_CHOICES.map((target) => {
             const blocked = (target === 'manual' || target === 'model') && data.manager === 'dsh-modes'
             return h('button', {
-              key: target, type: 'button', role: 'radio', 'aria-checked': choice === target, disabled: blocked || ui.busy.has(key),
+              key: target, type: 'button', role: 'radio', 'aria-checked': choice === target, tabIndex: choice === target ? 0 : -1, disabled: blocked || ui.busy.has(key),
               title: blocked ? t(`reason.${target}ByModes`) : target === 'manual' || target === 'model' ? t(`mode.${target}Hint`, { name: skill.name }) : undefined,
               onClick: () => { if (choice !== target) ui.setState(mode, skill.name, target) },
             }, t(`mode.${target}`))
@@ -1656,11 +1777,14 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 
     function SkillRow({ skill, data, filter, open, onToggle, ui, autoEdit, onAutoEdited, bodyOnly }) {
       const { t } = ui
+      const rowRef = React.useRef(null)
+      // A skill just created opens its editor, so the row must be in view.
+      React.useEffect(() => { if (autoEdit) rowRef.current?.scrollIntoView({ block: 'nearest' }) }, [autoEdit])
       const modes = data.modes
       const on = modes.filter(mode => cell(ui, data, skill, mode).on)
       const chosen = filter === '' ? undefined : modes.find(mode => mode.id === filter)
       const key = mode => `${mode.id}\0${skill.name}`
-      const flip = (mode, current) => ui.setState(mode, skill.name, current.on ? 'off' : 'on')
+      const flip = mode => ui.toggle(mode, skill)
       let side = null
       if (chosen !== undefined) {
         const current = cell(ui, data, skill, chosen)
@@ -1668,13 +1792,13 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           type: 'button', className: 'sk-switch', role: 'switch', 'aria-checked': current.on,
           'aria-label': t(current.on ? 'toggle.on' : 'toggle.off', { mode: ui.modeName(chosen) }),
           title: current.reason, disabled: current.reason !== undefined || ui.busy.has(key(chosen)),
-          onClick: () => flip(chosen, current),
+          onClick: () => flip(chosen),
         })
       }
       const summary = chosen === undefined
         ? t('available', { n: on.length, total: modes.length })
         : t(`state.${cell(ui, data, skill, chosen).state}`)
-      return h('div', { className: `sk-row${open ? ' is-open' : ''}` },
+      return h('div', { ref: rowRef, className: `sk-row${open ? ' is-open' : ''}` },
         h('div', { className: 'sk-top' },
           h('button', { type: 'button', className: 'sk-head', 'aria-expanded': open, onClick: onToggle },
             h('span', { className: 'sk-caret', 'aria-hidden': true }, '›'),
@@ -1683,6 +1807,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             (skill.tags ?? []).map(tag => h('span', { key: `tag:${tag}`, className: 'sk-chip is-tag' }, tag)),
             bodyOnly ? h('span', { className: 'sk-badge' }, t('search.body')) : null,
             skill.exists === false ? h('span', { className: 'sk-badge is-error' }, t('lib.missing')) : null,
+            !open && readDraft(skill.name) !== null ? h('span', { className: 'sk-badge is-warn', title: t('edit.draft') }, t('edit.dirty')) : null,
             skill.imported?.state === 'changed' ? h('span', { className: 'sk-badge is-accent' }, t('lib.sourceChanged')) : null,
             skill.imported?.github?.gone ? h('span', { className: 'sk-badge' }, t('github.gone')) : null,
             h('span', { className: 'sk-desc' }, skill.description ?? ''),
@@ -1748,7 +1873,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const chosen = data.modes.find(entry => entry.id === offIn)
       const candidates = chosen === undefined ? [] : unused.filter(skill => cell(ui, data, skill, chosen).reason === undefined && ui.choiceOf(chosen, skill) !== 'off')
       const scopeName = scope === '' ? '' : label(scope)
-      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('usage.title'), onKeyDown: onEscape(onClose) },
+      const panelRef = usePanelFocus()
+      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': t('usage.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('usage.title')),
           h('select', { className: 'sk-select', value: scope, 'aria-label': t('usage.allModes'), onChange: (event) => { setScope(event.target.value); setConfirm(false) } },
@@ -1845,7 +1971,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const { t } = ui
       const [confirm, setConfirm] = React.useState(null)
       const when = at => new Date(at).toLocaleString(ui.lang === 'zh' ? 'zh-CN' : 'en-US', { dateStyle: 'short', timeStyle: 'short' })
-      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('trash.title'), onKeyDown: onEscape(onClose) },
+      const panelRef = usePanelFocus()
+      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': t('trash.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('trash.title')),
           data.trash.length > 0 ? h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: busy, onClick: () => setConfirm({ kind: 'empty' }) }, t('trash.emptyAll')) : null,
@@ -1883,7 +2010,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const open = item => post(ROUTE, 'readSkipped', { path: item.path, ...ui.project === '' ? {} : { cwd: ui.project } }).then((value) => {
         setEditing({ path: item.path, text: item.fixable ? value.proposal.text : value.text, base: value.text, complete: item.fixable ? value.proposal.complete : false })
       }, error => ui.fail(error))
-      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('skipped.title'), onKeyDown: onEscape(onClose) },
+      const panelRef = usePanelFocus()
+      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': t('skipped.title'), onKeyDown: onEscape(onClose) },
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('skipped.title')),
           h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
@@ -1926,23 +2054,44 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       }
     }
 
+    /** Where the page keeps its search, filters, and open rows while the person visits another page. */
+    const VIEW_KEY = 'dsh-mode-skills.view'
+    function loadView() {
+      try {
+        const view = JSON.parse(window.sessionStorage.getItem(VIEW_KEY) ?? '{}')
+        return view !== null && typeof view === 'object' ? view : {}
+      } catch {
+        // Storage can be blocked or hold something else; the page then starts fresh.
+        return {}
+      }
+    }
+    function saveView(view) {
+      try {
+        window.sessionStorage.setItem(VIEW_KEY, JSON.stringify(view))
+      } catch {
+        // Storage can be blocked; the view is then not kept.
+      }
+    }
+
     function Page({ ctx, t }) {
       React.useSyncExternalStore(listener => ctx.locale.subscribe(listener), () => ctx.locale.getSnapshot())
       const [data, setData] = React.useState(null)
       const [failure, setFailure] = React.useState(null)
       const [loading, setLoading] = React.useState(false)
-      const [query, setQuery] = React.useState('')
-      const [filter, setFilter] = React.useState('')
-      const [openNames, setOpenNames] = React.useState(() => new Set())
+      const [view] = React.useState(loadView)
+      const [query, setQuery] = React.useState(() => (typeof view.query === 'string' ? view.query : ''))
+      const [filter, setFilter] = React.useState(() => (typeof view.filter === 'string' ? view.filter : ''))
+      const [openNames, setOpenNames] = React.useState(() => new Set(Array.isArray(view.open) ? view.open.filter(name => typeof name === 'string') : []))
       const [busy, setBusy] = React.useState(() => new Set())
       const [notice, setNotice] = React.useState(null)
       const [libBusy, setLibBusy] = React.useState(false)
-      const [panel, setPanel] = React.useState(null)
-      const [sort, setSort] = React.useState('name')
+      const [panel, setPanelState] = React.useState(null)
+      const [sort, setSort] = React.useState(() => (view.sort === 'tokens' ? 'tokens' : 'name'))
       const [editName, setEditName] = React.useState(null)
-      const [tag, setTag] = React.useState('')
+      const [pinned, setPinned] = React.useState(null)
+      const [tag, setTag] = React.useState(() => (typeof view.tag === 'string' ? view.tag : ''))
       const [project, setProject] = React.useState(savedProject)
-      const [bodyHits, setBodyHits] = React.useState(() => new Set())
+      const [bodyHits, setBodyHits] = React.useState({ text: '', names: new Set() })
       const [bulk, setBulk] = React.useState(null)
       const [usage, setUsage] = React.useState(null)
       const [importStart, setImportStart] = React.useState(undefined)
@@ -1950,10 +2099,49 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [usageLoading, setUsageLoading] = React.useState(false)
       const [usageError, setUsageError] = React.useState(null)
       const projectRef = React.useRef(project)
+      const dataRef = React.useRef(null)
+      const loadSeq = React.useRef(0)
+      const usageSeq = React.useRef(0)
+      const panelNow = React.useRef(null)
+      const importStartNow = React.useRef(undefined)
+      const openerRef = React.useRef(null)
+      const lastChoice = React.useRef(new Map())
       const alive = React.useRef(true)
       const noticeTimer = React.useRef(undefined)
 
+      panelNow.current = panel
+      importStartNow.current = importStart
+      /** Open, switch, or close the panel below the toolbar, remembering what had focus so closing can give it back. */
+      const setPanel = (next) => {
+        if (next !== null && panelNow.current === null) openerRef.current = document.activeElement
+        panelNow.current = next
+        setPanelState(next)
+      }
+      React.useEffect(() => {
+        if (panel !== null || openerRef.current === null) return
+        const opener = openerRef.current
+        openerRef.current = null
+        if (opener.isConnected) opener.focus({ preventScroll: true })
+      }, [panel])
+      // Esc steps back out of the open panel, wherever the focus is; a confirmation or editor with focus handles it first.
+      React.useEffect(() => {
+        const onKey = (event) => {
+          if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing || panelNow.current === null) return
+          const target = event.target
+          const typingElsewhere = target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) && !target.closest('.sk-panel')
+          if (typingElsewhere) return
+          event.preventDefault()
+          setPanel(panelNow.current === 'import' && importStartNow.current !== undefined ? 'store' : null)
+        }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+      }, [])
+      React.useEffect(() => {
+        saveView({ query, filter, tag, sort, open: [...openNames] })
+      }, [query, filter, tag, sort, openNames])
+
       const load = React.useCallback(function reload(refresh) {
+        const seq = ++loadSeq.current
         setLoading(true)
         return post(ROUTE, 'list', { ...refresh ? { refresh: true } : {}, ...projectRef.current === '' ? {} : { cwd: projectRef.current } })
           .then(async (value) => {
@@ -1981,12 +2169,14 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
                 value = { ...value, libraryError: error.message }
               }
             }
-            if (!alive.current) return
+            // Only the newest request counts: a slow answer to an earlier one must not bring back older data.
+            if (!alive.current || seq !== loadSeq.current) return
+            dataRef.current = value
             setData(value)
             setFailure(null)
           })
           .catch((error) => {
-            if (!alive.current) return undefined
+            if (!alive.current || seq !== loadSeq.current) return undefined
             // A remembered project folder that is gone or not a full path would block the page for good.
             if (projectRef.current !== '' && (error.code === 'folder-missing' || error.code === 'folder-relative')) {
               const gone = projectRef.current
@@ -1999,7 +2189,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             setFailure(error.message)
             return undefined
           })
-          .finally(() => { if (alive.current) setLoading(false) })
+          .finally(() => { if (alive.current && seq === loadSeq.current) setLoading(false) })
       }, [])
       React.useEffect(() => {
         alive.current = true
@@ -2013,19 +2203,23 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const ready = data !== null
       React.useEffect(() => {
         const text = query.trim()
-        if (text.length < 2 || !ready) {
-          setBodyHits(new Set())
-          return undefined
-        }
+        if (text.length < 2 || !ready) return undefined
         let live = true
         const timer = setTimeout(() => {
-          post(ROUTE, 'searchSkills', { query: text }).then(value => (live && alive.current ? setBodyHits(new Set(value.names)) : undefined), () => (live && alive.current ? setBodyHits(new Set()) : undefined))
+          post(ROUTE, 'searchSkills', { query: text }).then(value => (live && alive.current ? setBodyHits({ text, names: new Set(value.names) }) : undefined), () => (live && alive.current ? setBodyHits({ text, names: new Set() }) : undefined))
         }, 300)
         return () => {
           live = false
           clearTimeout(timer)
         }
       }, [query, ready])
+      React.useEffect(() => { setPinned(null) }, [query, filter, tag])
+      // A saved mode or tag that no longer exists would leave the list empty with no way to see why.
+      React.useEffect(() => {
+        if (data === null) return
+        if (filter !== '' && !data.modes.some(mode => mode.id === filter)) setFilter('')
+        if (tag !== '' && !data.skills.some(skill => (skill.tags ?? []).includes(tag))) setTag('')
+      }, [data])
 
       const presetT = ctx.locale.bind('settings.agentPreset')
       const modeName = (mode) => {
@@ -2048,6 +2242,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         clearTimeout(noticeTimer.current)
         setNotice(next)
         // A notice that offers an action stays longer, so there is time to take it.
+        // A pending notice ('busy') stays until the result replaces it.
         if (next?.kind === 'done') noticeTimer.current = setTimeout(() => { if (alive.current) setNotice(null) }, next.action === undefined ? NOTICE_MS : NOTICE_MS * 3)
       }
       const zh = String(ctx.locale.getSnapshot().active).toLowerCase().startsWith('zh')
@@ -2095,10 +2290,17 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           setPanel(null)
           setOpenNames(current => new Set(current).add(value.name))
           setEditName(value.name)
+          setPinned(value.name)
           const failed = value.failed ?? []
           if (failed.length > 0) show({ kind: 'warn', text: t('effect.failed', { modes: namesOf(failed.map(item => item.id)), reason: failed[0].error }) })
           else show({ kind: 'done', text: `${t('lib.created', { name: value.name })} · ${t('lib.newEffect')}` })
-          return load(true)
+          return load(true).then(() => {
+            // A skill no mode lists yet would leave the editor waiting for a row that never appears.
+            if (alive.current && !dataRef.current?.skills.some(skill => skill.name === value.name)) {
+              setEditName(null)
+              setPinned(null)
+            }
+          })
         }, (error) => { if (alive.current) show({ kind: 'warn', text: describe(error) }) })
           .finally(() => { if (alive.current) setLibBusy(false) })
       }
@@ -2158,6 +2360,20 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         : { preset: mode.id, skill, state: target })
       /** Set a skill on, manual only, model only, or off in a mode, through whichever plugin owns the settings. */
       const setState = (mode, skill, target) => save([changeFor(mode, skill, target)], `${mode.id}\0${skill}`)
+      /**
+       * The row's switch. Off remembers what the skill was (Manual or Model only) and On brings it back; replacing
+       * Manual or Model only offers Undo, since the switch itself cannot show them.
+       */
+      const toggle = (mode, skill) => {
+        const key = `${mode.id}\0${skill.name}`
+        const current = choiceOf(mode, skill)
+        if (current === 'off') {
+          save([changeFor(mode, skill.name, lastChoice.current.get(key) ?? 'on')], key)
+          return
+        }
+        lastChoice.current.set(key, current)
+        save([changeFor(mode, skill.name, 'off')], key, current === 'on' ? undefined : [changeFor(mode, skill.name, current)])
+      }
       /** Set several skill/mode pairs at once; the notice offers to undo them. */
       const setMany = (items) => {
         const changing = items.filter(item => choiceOf(item.mode, item.skill) !== item.target)
@@ -2171,6 +2387,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       /** Update skills installed from GitHub; resolves to the results, or null when the request failed as a whole. */
       const updateGithub = (names) => {
         setLibBusy(true)
+        show({ kind: 'busy', text: t('github.updating', { n: names.length }) })
         return post(ROUTE, 'updateGithub', { skills: names }).then((value) => {
           const done = value.results.filter(result => result.status !== 'error').length
           const failed = value.results.filter(result => result.status === 'error')
@@ -2188,7 +2405,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       /** Look for newer versions of every skill installed from GitHub. */
       const checkUpdates = () => {
         setLibBusy(true)
-        show({ kind: 'done', text: t('github.checking') })
+        show({ kind: 'busy', text: t('github.checking') })
         return post(ROUTE, 'checkUpdates', {}).then((value) => {
           if (alive.current) {
             if (value.updates.length > 0) {
@@ -2223,11 +2440,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       }
       /** Count skill loads in the session history over `days` days. */
       const loadUsage = (days, refresh) => {
+        const seq = ++usageSeq.current
         setUsageLoading(true)
         setUsageError(null)
-        return post(ROUTE, 'usage', { days, ...refresh ? { refresh: true } : {} }).then((value) => { if (alive.current) setUsage(value) }, (error) => {
-          if (alive.current) setUsageError(describe(error))
-        }).finally(() => { if (alive.current) setUsageLoading(false) })
+        return post(ROUTE, 'usage', { days, ...refresh ? { refresh: true } : {} }).then((value) => { if (alive.current && seq === usageSeq.current) setUsage(value) }, (error) => {
+          if (alive.current && seq === usageSeq.current) setUsageError(describe(error))
+        }).finally(() => { if (alive.current && seq === usageSeq.current) setUsageLoading(false) })
       }
       const openUsage = () => {
         const opening = panel !== 'usage'
@@ -2254,6 +2472,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         saveSkipped,
         setState,
         setMany,
+        toggle,
         choiceOf,
         updateGithub,
         project,
@@ -2284,10 +2503,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const namesMatch = skill => skill.name.toLowerCase().includes(needle) || (skill.description ?? '').toLowerCase().includes(needle)
         || (skill.alias ?? '').toLowerCase().includes(needle) || (skill.tags ?? []).some(entry => entry.toLowerCase().includes(needle))
       const allTags = [...new Set((data?.skills ?? []).flatMap(skill => skill.tags ?? []))].sort((a, b) => a.localeCompare(b))
-      const skills = (data?.skills ?? []).filter(skill =>
-        (filter === '' || skill.modes[filter] !== undefined)
+      const hits = bodyHits.text === query.trim() ? bodyHits.names : new Set()
+      // The skill just created stays listed whatever the filters say, until the filters change, so its editor can open.
+      const skills = (data?.skills ?? []).filter(skill => skill.name === pinned
+        || ((filter === '' || skill.modes[filter] !== undefined)
         && (tag === '' || (skill.tags ?? []).includes(tag))
-        && (needle === '' || namesMatch(skill) || bodyHits.has(skill.name)))
+        && (needle === '' || namesMatch(skill) || hits.has(skill.name))))
       if (sort === 'tokens') skills.sort((a, b) => (b.tokens ?? 0) - (a.tokens ?? 0) || a.name.localeCompare(b.name))
       const chosenMode = filter === '' ? undefined : modes.find(mode => mode.id === filter)
       const costs = modes.filter(mode => mode.catalog !== undefined)
@@ -2321,11 +2542,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('span', { className: 'sk-grow' }, t('empty.none', { dsh: data.roots.dsh, agents: data.roots.agents })),
           h('button', { type: 'button', className: 'sk-btn', onClick: () => setPanel('store') }, t('store.button')))
       } else if (skills.length === 0) {
-        body = h('div', { className: 'sk-hint' }, t('empty.filtered'))
+        body = h('div', { className: 'sk-hint' }, chosenMode !== undefined && chosenMode.hasSkillTool === false ? t('mode.noSkills', { mode: modeName(chosenMode) }) : t('empty.filtered'))
       } else {
         body = h('div', { className: 'sk-list' }, skills.map(skill => h(SkillRow, {
           key: skill.name, skill, data, filter, ui, open: openNames.has(skill.name), onToggle: () => toggleOpen(skill.name),
-          bodyOnly: needle !== '' && !namesMatch(skill) && bodyHits.has(skill.name),
+          bodyOnly: needle !== '' && !namesMatch(skill) && hits.has(skill.name),
           autoEdit: editName === skill.name, onAutoEdited: () => setEditName(null),
         })))
       }
@@ -2356,7 +2577,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('input', { type: 'search', className: 'sk-input', value: query, placeholder: t('search'), 'aria-label': t('search'), onChange: event => setQuery(event.target.value) }),
             h('select', { className: 'sk-select', value: filter, 'aria-label': t('allModes'), onChange: event => setFilter(event.target.value) },
               h('option', { value: '' }, t('allModes')),
-              modes.map(mode => h('option', { key: mode.id, value: mode.id }, mode.isDefault ? `${modeName(mode)} · ${t('default')}` : modeName(mode)))),
+              modes.map(mode => h('option', { key: mode.id, value: mode.id }, mode.hasSkillTool ? (mode.isDefault ? `${modeName(mode)} · ${t('default')}` : modeName(mode)) : t('mode.noSkillsOption', { mode: modeName(mode) })))),
             allTags.length === 0 ? null : h('select', { className: 'sk-select', value: tag, 'aria-label': t('tag.all'), onChange: event => setTag(event.target.value) },
               h('option', { value: '' }, t('tag.all')),
               allTags.map(entry => h('option', { key: entry, value: entry }, entry))),
@@ -2390,7 +2611,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           data !== null && panel === 'create' ? h(CreateSkillPanel, { ui, data, busy: libBusy, onCancel: () => setPanel(null), onCreate: createSkill }) : null,
           data !== null && (panel === 'store' || (panel === 'import' && importStart !== undefined)) ? h(StorePanel, { ui, data, hidden: panel !== 'store', onOpen: openFromStore, onClose: () => setPanel(null) }) : null,
           data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onBack: () => setPanel('store'), onOpenStore: () => setPanel('store'), onImport: runImport, start: importStart }) : null,
-          notice === null ? null : h('div', { className: `sk-note is-float ${notice.kind === 'done' ? 'is-done' : 'is-warn'}`, role: notice.kind === 'done' ? 'status' : 'alert' },
+          notice === null ? null : h('div', { className: `sk-note is-float ${{ done: 'is-done', warn: 'is-warn', busy: '' }[notice.kind]}`, role: notice.kind === 'warn' ? 'alert' : 'status' },
             h('span', { className: 'sk-grow' }, notice.text),
             notice.action === undefined ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: () => { const { run } = notice.action; show(null); run() } }, notice.action.label),
             h('button', { type: 'button', className: 'sk-btn', onClick: () => show(null) }, t('dismiss'))),
@@ -2401,7 +2622,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('button', { type: 'button', className: 'sk-btn', disabled: busy.has('bulk'), onClick: () => bulkList('on') }, t('bulk.listOn')),
             h('button', { type: 'button', className: 'sk-btn', disabled: busy.has('bulk'), onClick: () => setBulk('off') }, t('bulk.listOff'))),
           bulk === 'off' && chosenMode !== undefined ? h(ConfirmBox, {
-            ui, text: t('bulk.listConfirm', { mode: modeName(chosenMode), n: settableHere.length }), action: t('bulk.listOff'), danger: true, busy: busy.has('bulk'),
+            ui, text: t('bulk.listConfirm', { mode: modeName(chosenMode), n: settableHere.filter(skill => ui.choiceOf(chosenMode, skill) !== 'off').length }), action: t('bulk.listOff'), danger: true, busy: busy.has('bulk'),
             onCancel: () => setBulk(null), onConfirm: () => bulkList('off'),
           }) : null,
           body))
