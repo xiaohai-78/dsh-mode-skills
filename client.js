@@ -249,6 +249,7 @@ window.__ModuleLoader__.load({
       'err.skill-no-frontmatter': 'SKILL.md 缺少 name 或 description',
       'err.skill-linked': '这个 Skill 文件夹是链接，覆盖它会改到其他工具的文件',
       'search.body': '正文匹配',
+      'meta.title': '显示名和标签',
       'meta.alias': '显示名',
       'meta.aliasPlaceholder': '例如 周报（只在这里显示）',
       'meta.tags': '标签',
@@ -362,7 +363,7 @@ window.__ModuleLoader__.load({
       'detail.usageNone': '这段时间里没用过',
       'detail.usageLine': '{times}（模型 {model}、手动 {user}），最近 {when}',
       'err.usage-unavailable': '当前组合没有会话历史服务，统计不了使用情况',
-      'store.button': '商城',
+      'store.button': 'Skill 商城',
       'store.title': 'Skill 商城',
       'store.placeholder': '搜索 Skill，例如 pdf、code review、数据库',
       'store.search': '搜索',
@@ -616,6 +617,7 @@ window.__ModuleLoader__.load({
       'err.skill-no-frontmatter': 'SKILL.md is missing name or description',
       'err.skill-linked': 'This skill folder is a link; replacing it would change another tool\'s files',
       'search.body': 'Text match',
+      'meta.title': 'Display name and tags',
       'meta.alias': 'Display name',
       'meta.aliasPlaceholder': 'For example Weekly report (shown only here)',
       'meta.tags': 'Tags',
@@ -729,7 +731,7 @@ window.__ModuleLoader__.load({
       'detail.usageNone': 'Not used in this time',
       'detail.usageLine': '{times} (model {model}, manual {user}), last {when}',
       'err.usage-unavailable': 'This composition has no session history, so usage cannot be counted',
-      'store.button': 'Store',
+      'store.button': 'Skill store',
       'store.title': 'Skill store',
       'store.placeholder': 'Search skills, e.g. pdf, code review, database',
       'store.search': 'Search',
@@ -753,23 +755,33 @@ window.__ModuleLoader__.load({
     const CSS = `
 .sk { --sk-r-sm: var(--dsw-radius-sm, 8px); --sk-r-md: var(--dsw-radius-md, 12px); --sk-tint: var(--dsw-alias-interactive-bg-hover); box-sizing: border-box; height: 100%; overflow-y: auto; color: var(--dsw-alias-label-primary); font-size: 13px; }
 .sk-inner { container-type: inline-size; box-sizing: border-box; max-width: 880px; margin: 0 auto; padding: 28px 32px 40px; display: flex; flex-direction: column; gap: 14px; }
-.sk h1 { margin: 0; font-size: 20px; font-weight: 500; }
+.sk h1 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 500; line-height: 28px; }
 .sk-sub { margin: 4px 0 0; color: var(--dsw-alias-label-secondary); }
+.sk-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; }
+.sk-titlebar { min-width: 0; }
+.sk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sk-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.sk-filters .sk-input { flex: 1 1 240px; }
+.sk-summary { display: flex; align-items: center; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap; }
+.sk-tools { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin: 0 -12px; }
+.sk-btn.is-ghost { border-color: transparent; color: var(--dsw-alias-label-secondary); }
+.sk-btn.is-ghost[aria-expanded="true"] { background: var(--sk-tint); color: var(--dsw-alias-label-primary); }
 .sk-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sk-grow { flex: 1 1 auto; min-width: 0; }
-.sk-input, .sk-select { box-sizing: border-box; min-width: 0; font: inherit; padding: 6px 10px; border-radius: var(--sk-r-sm); border: .5px solid var(--dsw-alias-border-l3); background: var(--dsw-alias-bg-layer-1); color: inherit; }
+.sk-input, .sk-select { box-sizing: border-box; min-width: 0; height: 32px; font: inherit; padding: 0 10px; border-radius: var(--sk-r-sm); border: .5px solid var(--dsw-alias-border-l3); background: var(--dsw-alias-bg-layer-1); color: inherit; }
 .sk-input { flex: 1 1 220px; }
-.sk-btn { font: inherit; font-size: 12px; padding: 5px 12px; border-radius: var(--sk-r-sm); border: .5px solid var(--dsw-alias-border-l3); background: transparent; color: inherit; cursor: pointer; white-space: nowrap; }
+.sk-btn { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 30px; font: inherit; font-size: 12px; padding: 0 12px; border-radius: var(--sk-r-sm); border: .5px solid var(--dsw-alias-border-l3); background: transparent; color: inherit; cursor: pointer; white-space: nowrap; }
 .sk-btn:disabled { opacity: .5; cursor: default; }
 .sk-hint { color: var(--dsw-alias-label-tertiary); font-size: 12px; line-height: 1.5; }
 .sk-note { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 10px; border-radius: var(--sk-r-sm); background: var(--sk-tint); font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary); }
 .sk-note.is-warn { color: var(--dsw-alias-state-warn-primary); }
+.sk-note.is-float { position: sticky; top: 8px; z-index: 5; background: var(--dsw-alias-bg-layer-1); border: .5px solid var(--dsw-alias-border-l3); box-shadow: 0 4px 16px rgba(0, 0, 0, .12); }
 .sk-note.is-done { color: var(--dsw-alias-state-success-primary); }
 .sk-list { display: flex; flex-direction: column; gap: 8px; }
 .sk-row { border: .5px solid var(--dsw-alias-settings-card-stroke, var(--dsw-alias-border-l3)); border-radius: var(--sk-r-md); background: var(--dsw-alias-settings-card-fill, transparent); }
 .sk-top { display: flex; align-items: center; border-radius: var(--sk-r-md); }
 .sk-head { flex: 1 1 auto; min-width: 0; display: flex; gap: 10px; align-items: center; box-sizing: border-box; padding: 10px 12px; font: inherit; text-align: left; border: 0; border-radius: var(--sk-r-md); background: none; color: inherit; cursor: pointer; }
-.sk-name { font-family: var(--dsw-font-mono, ui-monospace, monospace); font-weight: 500; white-space: nowrap; }
+.sk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--dsw-font-mono, ui-monospace, monospace); font-weight: 500; white-space: nowrap; }
 .sk-desc { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dsw-alias-label-secondary); }
 .sk-row.is-open .sk-desc { visibility: hidden; }
 .sk-chip { flex: none; font: inherit; font-size: 11px; line-height: 18px; padding: 0 7px; border: 0; border-radius: var(--sk-r-sm); background: var(--sk-tint); color: var(--dsw-alias-label-secondary); white-space: nowrap; }
@@ -780,9 +792,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-meta { flex: none; color: var(--dsw-alias-label-tertiary); font-size: 12px; white-space: nowrap; }
 .sk-caret { flex: none; color: var(--dsw-alias-label-tertiary); transition: transform .16s; }
 .sk-row.is-open .sk-caret { transform: rotate(90deg); }
-.sk-body { display: flex; flex-direction: column; gap: 10px; padding: 0 12px 12px 12px; }
-.sk-full { margin: 0; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
-.sk-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 12px; padding: 8px 10px; border-radius: var(--sk-r-sm); background: var(--sk-tint); font-size: 12px; line-height: 1.5; }
+.sk-body { display: flex; flex-direction: column; gap: 14px; padding: 2px 14px 14px 14px; }
+.sk-body > .sk-section { padding-top: 14px; border-top: .5px solid var(--dsw-alias-border-l3); }
+.sk-full { margin: 0; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--dsw-alias-label-secondary); }
+.sk-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; padding: 12px 14px; border-radius: var(--sk-r-sm); background: var(--sk-tint); font-size: 12px; line-height: 1.5; }
 .sk-details dt { color: var(--dsw-alias-label-tertiary); }
 .sk-details dd { margin: 0; overflow-wrap: anywhere; }
 .sk-path { font-family: var(--dsw-font-mono, ui-monospace, monospace); }
@@ -797,17 +810,18 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-end { justify-content: flex-end; }
 .sk-primary { background: var(--dsw-alias-button-primary-fill); border-color: transparent; color: var(--dsw-alias-bg-layer-1); }
 .sk-danger { color: var(--dsw-alias-state-danger-primary, #d93025); }
-.sk-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: var(--sk-r-md); border: .5px solid var(--dsw-alias-settings-card-stroke, var(--dsw-alias-border-l3)); background: var(--dsw-alias-settings-card-fill, transparent); }
+.sk-panel { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border-radius: var(--sk-r-md); border: .5px solid var(--dsw-alias-settings-card-stroke, var(--dsw-alias-border-l3)); background: var(--dsw-alias-settings-card-fill, transparent); }
 .sk-form { display: flex; gap: 12px; flex-wrap: wrap; }
 .sk-field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 240px; min-width: 0; font-size: 12px; color: var(--dsw-alias-label-secondary); }
 .sk-field .sk-input, .sk-field .sk-select { flex: none; width: 100%; color: var(--dsw-alias-label-primary); }
+.sk-panel > .sk-field, .sk-section > .sk-field { flex: none; }
 .sk-hint.is-error, .sk-error { color: var(--dsw-alias-state-danger-primary, #d93025); }
 .sk-hint.is-warn { color: var(--dsw-alias-state-warn-primary); }
 .sk-alias { font-weight: 500; white-space: nowrap; }
 .sk-name.is-dim { font-weight: 400; font-size: 12px; color: var(--dsw-alias-label-tertiary); }
 .sk-chip.is-tag { color: var(--dsw-alias-state-business-primary); }
 .sk-option { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; }
-.sk-textarea { width: 100%; box-sizing: border-box; min-height: 260px; font-family: var(--dsw-font-mono, ui-monospace, monospace); font-size: 12px; line-height: 1.5; resize: vertical; }
+.sk-textarea { width: 100%; box-sizing: border-box; height: auto; padding: 8px 10px; min-height: 260px; font-family: var(--dsw-font-mono, ui-monospace, monospace); font-size: 12px; line-height: 1.5; resize: vertical; }
 .sk-confirm { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: var(--sk-r-sm); background: var(--sk-tint); }
 .sk-section { display: flex; flex-direction: column; gap: 6px; }
 .sk-label { font-size: 12px; color: var(--dsw-alias-label-tertiary); }
@@ -828,16 +842,16 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-link { font: inherit; font-size: 12px; padding: 0; border: 0; background: none; color: var(--dsw-alias-state-business-primary); cursor: pointer; }
 .sk-seg.is-small button { padding: 2px 9px; font-size: 11px; }
 .sk-seg button:disabled { opacity: .45; cursor: default; }
-.sk-moderows { display: flex; flex-direction: column; gap: 6px; }
+.sk-moderows { display: flex; flex-direction: column; gap: 8px; }
 .sk-moderow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.sk-moderow .sk-modename { min-width: 96px; }
+.sk-moderow .sk-modename { min-width: 108px; }
 .sk-drop { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding: 22px 12px; border-radius: var(--sk-r-md); border: 1px dashed var(--dsw-alias-border-l3); text-align: center; color: var(--dsw-alias-label-secondary); }
 .sk-drop.is-over { border-color: var(--dsw-alias-state-business-primary); background: var(--sk-tint); }
 .sk-entry { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: var(--sk-r-sm); border: .5px solid var(--dsw-alias-border-l3); }
 @keyframes sk-pulse { from { opacity: .45 } to { opacity: .9 } }
 @media (prefers-reduced-motion: reduce) { .sk-skeleton span { animation: none; } .sk-caret, .sk-switch, .sk-switch::after { transition: none; } }
 @media (hover: hover) { .sk-head:hover, .sk-btn:hover:not(:disabled), button.sk-chip:hover:not(:disabled), .sk-seg button:hover, .sk-grouphead:hover { background: var(--dsw-alias-interactive-bg-hover-accent, var(--sk-tint)); } .sk-primary:hover:not(:disabled) { background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill)); } .sk-link:hover { text-decoration: underline; } }
-@container (max-width: 560px) { .sk-desc { display: none; } }
+@container (max-width: 560px) { .sk-desc, .sk-narrow-hide { display: none; } .sk-actions { width: 100%; } }
 `
 
     class ActionFailure extends Error {
@@ -1428,6 +1442,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         void ui.own('setMeta', { skill: skill.name, alias, tags: tags.split(/[,，、]/).map(tag => tag.trim()).filter(Boolean) }, 'meta.saved', false)
       }
       return h('form', { className: 'sk-section', onSubmit: submit },
+        h('span', { className: 'sk-label' }, t('meta.title')),
         h('div', { className: 'sk-form' },
           h('label', { className: 'sk-field' }, t('meta.alias'),
             h('input', { className: 'sk-input', value: alias, maxLength: 40, placeholder: t('meta.aliasPlaceholder'), onChange: event => setAlias(event.target.value) })),
@@ -1594,15 +1609,15 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('button', { type: 'button', className: 'sk-head', 'aria-expanded': open, onClick: onToggle },
             h('span', { className: 'sk-caret', 'aria-hidden': true }, '›'),
             skill.alias === undefined ? h('span', { className: 'sk-name' }, skill.name) : h(React.Fragment, null, h('span', { className: 'sk-alias' }, skill.alias), h('span', { className: 'sk-name is-dim' }, skill.name)),
-            skill.source === undefined ? null : h('span', { className: 'sk-chip' }, ui.sourceName(skill)),
+            skill.source === undefined ? null : h('span', { className: 'sk-chip sk-narrow-hide' }, ui.sourceName(skill)),
             (skill.tags ?? []).map(tag => h('span', { key: `tag:${tag}`, className: 'sk-chip is-tag' }, tag)),
             bodyOnly ? h('span', { className: 'sk-badge' }, t('search.body')) : null,
             skill.exists === false ? h('span', { className: 'sk-badge is-error' }, t('lib.missing')) : null,
             skill.imported?.state === 'changed' ? h('span', { className: 'sk-badge is-accent' }, t('lib.sourceChanged')) : null,
             skill.imported?.github?.gone ? h('span', { className: 'sk-badge' }, t('github.gone')) : null,
             h('span', { className: 'sk-desc' }, skill.description ?? ''),
-            skill.tokens === undefined ? null : h('span', { className: 'sk-meta', title: t('tok.hint') }, t('tok.skill', { n: skill.tokens })),
-            usageOf(ui.usage, skill.name) === undefined ? null : h('span', { className: 'sk-meta' }, times(t, usageOf(ui.usage, skill.name).model + usageOf(ui.usage, skill.name).user)),
+            skill.tokens === undefined ? null : h('span', { className: 'sk-meta sk-narrow-hide', title: t('tok.hint') }, t('tok.skill', { n: skill.tokens })),
+            usageOf(ui.usage, skill.name) === undefined ? null : h('span', { className: 'sk-meta sk-narrow-hide' }, times(t, usageOf(ui.usage, skill.name).model + usageOf(ui.usage, skill.name).user)),
             h('span', { className: 'sk-meta' }, summary)),
           side),
         open ? h('div', { className: 'sk-body' },
@@ -2196,10 +2211,14 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       return h('div', { className: 'sk' },
         h('style', null, CSS),
         h('div', { className: 'sk-inner' },
-          h('header', null,
-            h('h1', null, t('title')),
-            h('p', { className: 'sk-sub' }, t('intro'))),
-          h('div', { className: 'sk-note' }, t('preview')),
+          h('header', { className: 'sk-header' },
+            h('div', { className: 'sk-titlebar' },
+              h('h1', null, t('title'), h('span', { className: 'sk-badge' }, t('preview'))),
+              h('p', { className: 'sk-sub' }, t('intro'))),
+            h('div', { className: 'sk-actions' },
+              h('button', { type: 'button', className: 'sk-btn sk-primary', 'aria-expanded': panel === 'create', disabled: data === null || libBusy, onClick: () => setPanel(panel === 'create' ? null : 'create') }, t('lib.create')),
+              h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'store', disabled: data === null, onClick: () => setPanel(panel === 'store' ? null : 'store') }, t('store.button')),
+              h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'import', disabled: data === null || (libBusy && panel !== 'import'), onClick: () => { setImportStart(undefined); setPanel(panel === 'import' ? null : 'import') } }, t('lib.import')))),
           data?.manager === 'dsh-modes' ? h('div', { className: 'sk-note' }, t('managedByModes')) : null,
           dormantOff + dormantOther > 0 ? h('div', { className: 'sk-note' },
             h('div', { className: 'sk-grow' },
@@ -2211,7 +2230,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: () => updateGithub(githubChanged.map(skill => skill.name)) }, t('github.all', { n: githubChanged.length }))) : null,
           data?.stateError === undefined ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, t('stateError', { reason: data.stateError })),
           data?.libraryError === undefined ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, t('lib.libraryFailed', { reason: data.libraryError })),
-          h('div', { className: 'sk-bar' },
+          h('div', { className: 'sk-filters' },
             h('input', { type: 'search', className: 'sk-input', value: query, placeholder: t('search'), 'aria-label': t('search'), onChange: event => setQuery(event.target.value) }),
             h('select', { className: 'sk-select', value: filter, 'aria-label': t('allModes'), onChange: event => setFilter(event.target.value) },
               h('option', { value: '' }, t('allModes')),
@@ -2221,15 +2240,18 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
               allTags.map(entry => h('option', { key: entry, value: entry }, entry))),
             h('select', { className: 'sk-select', value: sort, 'aria-label': t('sort.name'), onChange: event => setSort(event.target.value) },
               h('option', { value: 'name' }, t('sort.name')),
-              h('option', { value: 'tokens' }, t('sort.tokens'))),
-            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'create', disabled: data === null || libBusy, onClick: () => setPanel(panel === 'create' ? null : 'create') }, t('lib.create')),
-            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'store', disabled: data === null, onClick: () => setPanel(panel === 'store' ? null : 'store') }, t('store.button')),
-            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'import', disabled: data === null || (libBusy && panel !== 'import'), onClick: () => { setImportStart(undefined); setPanel(panel === 'import' ? null : 'import') } }, t('lib.import')),
-            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'project', disabled: data === null, onClick: () => setPanel(panel === 'project' ? null : 'project') }, project === '' ? t('project.button') : `${t('project.button')} ✓`),
-            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'usage', disabled: data === null, onClick: openUsage }, t('usage.button')),
-            githubSkills.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: checkUpdates }, t('github.check')),
-            data === null || data.trash.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'trash', onClick: () => setPanel(panel === 'trash' ? null : 'trash') }, t('trash.button', { n: data.trash.length })),
-            h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => load(true) }, t('refresh'))),
+              h('option', { value: 'tokens' }, t('sort.tokens')))),
+          h('div', { className: 'sk-summary' },
+            data === null || data.skills.length === 0 ? h('span', { className: 'sk-grow' }) : h('div', { className: 'sk-hint sk-grow', title: t('tok.hint') },
+              chosenMode !== undefined
+                ? chosenMode.catalog === undefined ? t('count', { n: skills.length }) : t('tok.mode', { mode: modeName(chosenMode), n: chosenMode.catalog.skills, tokens: chosenMode.catalog.tokens })
+                : costs.length === 0 ? t('count', { n: skills.length }) : `${t('count', { n: skills.length })} · ${t('tok.modes', { list: costs.map(mode => t('tok.entry', { mode: modeName(mode), tokens: mode.catalog.tokens })).join(zh ? '、' : ', ') })}`),
+            h('div', { className: 'sk-tools' },
+              h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'project', disabled: data === null, onClick: () => setPanel(panel === 'project' ? null : 'project') }, project === '' ? t('project.button') : `${t('project.button')} ✓`),
+              h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'usage', disabled: data === null, onClick: openUsage }, t('usage.button')),
+              githubSkills.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn is-ghost', disabled: libBusy, onClick: checkUpdates }, t('github.check')),
+              data === null || data.trash.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'trash', onClick: () => setPanel(panel === 'trash' ? null : 'trash') }, t('trash.button', { n: data.trash.length })),
+              h('button', { type: 'button', className: 'sk-btn is-ghost', disabled: loading, onClick: () => load(true) }, t('refresh')))),
           data !== null && panel === 'usage' ? h(UsagePanel, {
             ui, data, usage, loading: usageLoading, error: usageError, days: usageDays,
             onDays: (days) => { setUsageDays(days); void loadUsage(days, false) }, onRefresh: () => loadUsage(usageDays, true), onClose: () => setPanel(null),
@@ -2246,7 +2268,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           data !== null && panel === 'create' ? h(CreateSkillPanel, { ui, data, busy: libBusy, onCancel: () => setPanel(null), onCreate: createSkill }) : null,
           data !== null && panel === 'store' ? h(StorePanel, { ui, data, onOpen: openFromStore, onClose: () => setPanel(null) }) : null,
           data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onImport: runImport, start: importStart }) : null,
-          notice === null ? null : h('div', { className: `sk-note ${notice.kind === 'done' ? 'is-done' : 'is-warn'}`, role: notice.kind === 'done' ? 'status' : 'alert' },
+          notice === null ? null : h('div', { className: `sk-note is-float ${notice.kind === 'done' ? 'is-done' : 'is-warn'}`, role: notice.kind === 'done' ? 'status' : 'alert' },
             h('span', { className: 'sk-grow' }, notice.text),
             notice.action === undefined ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: () => { const { run } = notice.action; show(null); run() } }, notice.action.label),
             h('button', { type: 'button', className: 'sk-btn', onClick: () => show(null) }, t('dismiss'))),
@@ -2260,10 +2282,6 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             ui, text: t('bulk.listConfirm', { mode: modeName(chosenMode), n: settableHere.length }), action: t('bulk.listOff'), danger: true, busy: busy.has('bulk'),
             onCancel: () => setBulk(null), onConfirm: () => bulkList('off'),
           }) : null,
-          data === null || data.skills.length === 0 ? null : h('div', { className: 'sk-hint', title: t('tok.hint') },
-            chosenMode !== undefined
-              ? chosenMode.catalog === undefined ? t('count', { n: skills.length }) : t('tok.mode', { mode: modeName(chosenMode), n: chosenMode.catalog.skills, tokens: chosenMode.catalog.tokens })
-              : costs.length === 0 ? t('count', { n: skills.length }) : `${t('count', { n: skills.length })} · ${t('tok.modes', { list: costs.map(mode => t('tok.entry', { mode: modeName(mode), tokens: mode.catalog.tokens })).join(zh ? '、' : ', ') })}`),
           body))
     }
 
