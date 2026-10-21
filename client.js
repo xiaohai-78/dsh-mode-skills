@@ -362,10 +362,11 @@ window.__ModuleLoader__.load({
       'detail.usageNone': '这段时间里没用过',
       'detail.usageLine': '{times}（模型 {model}、手动 {user}），最近 {when}',
       'err.usage-unavailable': '当前组合没有会话历史服务，统计不了使用情况',
-      'lib.importFrom.store': '商城',
+      'store.button': '商城',
+      'store.title': 'Skill 商城',
       'store.placeholder': '搜索 Skill，例如 pdf、code review、数据库',
       'store.search': '搜索',
-      'store.hint': '搜索来自 skills.sh（公开的 Skill 目录，数字是它统计的安装次数），搜索词会发给它。点「查看并安装」会先读取仓库、让你勾选，不会直接安装',
+      'store.hint': '搜索来自 skills.sh（公开的 Skill 目录，数字是它统计的安装次数），搜索词会发给它。点「查看并安装」会先读取仓库、让你在导入页里勾选，不会直接安装',
       'store.recommended': '推荐的仓库',
       'store.results': '搜索结果（{n}）',
       'store.empty': '没有找到匹配的 Skill',
@@ -728,10 +729,11 @@ window.__ModuleLoader__.load({
       'detail.usageNone': 'Not used in this time',
       'detail.usageLine': '{times} (model {model}, manual {user}), last {when}',
       'err.usage-unavailable': 'This composition has no session history, so usage cannot be counted',
-      'lib.importFrom.store': 'Store',
+      'store.button': 'Store',
+      'store.title': 'Skill store',
       'store.placeholder': 'Search skills, e.g. pdf, code review, database',
       'store.search': 'Search',
-      'store.hint': 'Search is served by skills.sh, a public skill directory (the number is its install count); your search text is sent to it. View and install reads the repository and lets you choose; nothing is installed right away',
+      'store.hint': 'Search is served by skills.sh, a public skill directory (the number is its install count); your search text is sent to it. View and install reads the repository and lets you choose in the import page; nothing is installed right away',
       'store.recommended': 'Recommended repositories',
       'store.results': 'Results ({n})',
       'store.empty': 'No matching skills',
@@ -1039,10 +1041,60 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       return { name: item.name, fresh: true }
     }
 
-    /** The import list: skills in the Codex and Claude Code folders, or in one folder, to copy in. */
-    function ImportSkillsPanel({ ui, data, busy, onClose, onImport }) {
+    /** The skill store: search skills.sh or browse recommended repositories, then read one in the import page. */
+    function StorePanel({ ui, data, onOpen, onClose }) {
       const { t } = ui
-      const [from, setFrom] = React.useState('agents')
+      const [query, setQuery] = React.useState('')
+      const [results, setResults] = React.useState(null)
+      const [repos, setRepos] = React.useState(null)
+      const [loading, setLoading] = React.useState(false)
+      const [error, setError] = React.useState(null)
+      const taken = new Set(data.skills.map(skill => skill.name))
+      const ready = [...query.trim()].length >= 2
+      React.useEffect(() => {
+        post(ROUTE, 'storeIndex', {}).then(value => setRepos(value.repos), () => setRepos([]))
+      }, [])
+      const search = () => {
+        setLoading(true)
+        setError(null)
+        post(ROUTE, 'storeSearch', { query }).then(value => setResults(value.results), failure => setError(ui.describe(failure))).finally(() => setLoading(false))
+      }
+      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('store.title'), onKeyDown: onEscape(onClose) },
+        h('div', { className: 'sk-bar' },
+          h('strong', { className: 'sk-grow' }, t('store.title')),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+        h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (ready) search() } },
+          h('input', { className: 'sk-input', value: query, autoFocus: true, spellCheck: false, placeholder: t('store.placeholder'), 'aria-label': t('store.title'), onChange: event => setQuery(event.target.value) }),
+          h('button', { type: 'submit', className: 'sk-btn sk-primary', disabled: loading || !ready }, t('store.search'))),
+        h('div', { className: 'sk-hint' }, t('store.hint')),
+        error === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, error),
+        loading ? h('div', { className: 'sk-hint' }, t('store.searching')) : null,
+        results !== null ? h(React.Fragment, null,
+          h('div', { className: 'sk-bar' },
+            h('strong', { className: 'sk-grow' }, t('store.results', { n: results.length })),
+            h('button', { type: 'button', className: 'sk-link', onClick: () => setResults(null) }, t('store.recommended'))),
+          results.length === 0 ? h('div', { className: 'sk-hint' }, t('store.empty')) : results.map(result => h('div', { key: result.id, className: 'sk-entry' },
+            h('div', { className: 'sk-bar' },
+              h('span', { className: 'sk-name sk-grow' }, result.skill),
+              taken.has(result.skill) ? (data.skills.find(skill => skill.name === result.skill)?.imported?.github?.repo === result.repo
+                ? h('span', { className: 'sk-badge' }, t('store.installed'))
+                : h('span', { className: 'sk-badge is-warn', title: t('store.sameNameHint') }, t('store.sameName'))) : null,
+              h('span', { className: 'sk-hint' }, t('store.installs', { n: result.installs.toLocaleString(ui.lang === 'zh' ? 'zh-CN' : 'en-US') })),
+              h('button', { type: 'button', className: 'sk-btn', onClick: () => onOpen(result.repo, result.skill) }, t('store.view'))),
+            h('div', { className: 'sk-hint sk-path' }, result.repo)))) : h(React.Fragment, null,
+          h('strong', null, t('store.recommended')),
+          (repos ?? []).map(entry => h('div', { key: entry.repo, className: 'sk-entry' },
+            h('div', { className: 'sk-bar' },
+              h('span', { className: 'sk-name sk-grow' }, entry.repo),
+              h('button', { type: 'button', className: 'sk-btn', onClick: () => onOpen(entry.repo) }, t('store.viewRepo'))),
+            h('div', { className: 'sk-hint' }, ui.lang === 'zh' ? entry.zh : entry.en),
+            entry.note === undefined ? null : h('div', { className: 'sk-hint is-warn' }, ui.lang === 'zh' ? entry.note.zh : entry.note.en)))))
+    }
+
+    /** The import list: skills in the Codex and Claude Code folders, or in one folder, to copy in. */
+    function ImportSkillsPanel({ ui, data, busy, onClose, onImport, start }) {
+      const { t } = ui
+      const [from, setFrom] = React.useState(start === undefined ? 'agents' : 'github')
       const [folder, setFolder] = React.useState('')
       const [sources, setSources] = React.useState(null)
       const [loading, setLoading] = React.useState(false)
@@ -1053,12 +1105,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [report, setReport] = React.useState([])
       const [upload, setUpload] = React.useState(null)
       const [over, setOver] = React.useState(false)
-      const [address, setAddress] = React.useState('')
-      const [storeQuery, setStoreQuery] = React.useState('')
-      const [storeResults, setStoreResults] = React.useState(null)
-      const [storeRepos, setStoreRepos] = React.useState(null)
-      const [storeLoading, setStoreLoading] = React.useState(false)
-      const [storeError, setStoreError] = React.useState(null)
+      const [address, setAddress] = React.useState(start?.repo ?? '')
       const staged = from === 'upload' || from === 'github'
       const choicesFor = groups => new Map(groups.flatMap(group => group.items.map((item) => {
         const prefix = group.source === 'folder' || group.source === 'upload' || group.source === 'github' ? '' : `${group.source.split(/[-:]/)[0]}-`
@@ -1085,6 +1132,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         }).finally(() => setLoading(false))
       }
       React.useEffect(() => { if (from === 'agents') void load() }, [from])
+      // Opened from the store: read that repository at once, with the chosen skill selected.
+      React.useEffect(() => { if (start !== undefined) stageGithub(start.repo, start.pick) }, [])
       const items = sources === null ? [] : sources.groups.flatMap(group => group.items)
       const selectable = item => ['new', 'rename', 'exists', 'updated'].includes(item.status)
       const selected = items.filter(item => selectable(item) && choices.get(item.path)?.on)
@@ -1150,24 +1199,6 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           if (value.items.length === 0) setError(t('github.noSkill'))
           else if (value.truncated) setReport([{ key: 'truncated', text: t('github.truncated') }])
         }, failure => setError(ui.describe(failure))).finally(() => setLoading(false))
-      }
-      /** Search the store; an empty store answer is not an error. */
-      const searchStore = () => {
-        setStoreLoading(true)
-        setStoreError(null)
-        post(ROUTE, 'storeSearch', { query: storeQuery }).then(value => setStoreResults(value.results), failure => setStoreError(ui.describe(failure))).finally(() => setStoreLoading(false))
-      }
-      React.useEffect(() => {
-        if (from !== 'store' || storeRepos !== null) return
-        post(ROUTE, 'storeIndex', {}).then(value => setStoreRepos(value.repos), () => setStoreRepos([]))
-      }, [from])
-      /** Read a store entry's repository through the GitHub flow, with its skill selected. */
-      const openRepo = (repo, pick) => {
-        setFrom('github')
-        setAddress(repo)
-        setUpload(null)
-        setReport([])
-        stageGithub(repo, pick)
       }
       const onDrop = (event) => {
         event.preventDefault()
@@ -1260,7 +1291,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('lib.import')),
           h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
-        h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github', 'store'].map(name => h('button', {
+        h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
           key: name, type: 'button', role: 'radio', 'aria-checked': from === name,
           onClick: () => { setFrom(name); setSources(null); setUpload(null); setError(null); setReport([]) },
         }, t(`lib.importFrom.${name}`)))),
@@ -1274,33 +1305,6 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('label', { className: 'sk-btn' }, t('upload.pickZip'), h('input', { type: 'file', accept: '.zip,application/zip', hidden: true, onChange: onPick })),
           h('label', { className: 'sk-btn' }, t('upload.pickFolder'), h('input', { type: 'file', webkitdirectory: '', multiple: true, hidden: true, onChange: onPick })))) : null,
-        from === 'store' ? h('div', { className: 'sk-section' },
-          h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if ([...storeQuery.trim()].length >= 2) searchStore() } },
-            h('input', { className: 'sk-input', value: storeQuery, spellCheck: false, placeholder: t('store.placeholder'), 'aria-label': t('lib.importFrom.store'), onChange: event => setStoreQuery(event.target.value) }),
-            h('button', { type: 'submit', className: 'sk-btn', disabled: storeLoading || [...storeQuery.trim()].length < 2 }, t('store.search'))),
-          h('div', { className: 'sk-hint' }, t('store.hint')),
-          storeError === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, storeError),
-          storeLoading ? h('div', { className: 'sk-hint' }, t('store.searching')) : null,
-          storeResults !== null ? h(React.Fragment, null,
-            h('div', { className: 'sk-bar' },
-              h('strong', { className: 'sk-grow' }, t('store.results', { n: storeResults.length })),
-              h('button', { type: 'button', className: 'sk-link', onClick: () => setStoreResults(null) }, t('store.recommended'))),
-            storeResults.length === 0 ? h('div', { className: 'sk-hint' }, t('store.empty')) : storeResults.map(result => h('div', { key: result.id, className: 'sk-entry' },
-              h('div', { className: 'sk-bar' },
-                h('span', { className: 'sk-name sk-grow' }, result.skill),
-                taken.has(result.skill) ? (data.skills.find(skill => skill.name === result.skill)?.imported?.github?.repo === result.repo
-                  ? h('span', { className: 'sk-badge' }, t('store.installed'))
-                  : h('span', { className: 'sk-badge is-warn', title: t('store.sameNameHint') }, t('store.sameName'))) : null,
-                h('span', { className: 'sk-hint' }, t('store.installs', { n: result.installs.toLocaleString(ui.lang === 'zh' ? 'zh-CN' : 'en-US') })),
-                h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => openRepo(result.repo, result.skill) }, t('store.view'))),
-              h('div', { className: 'sk-hint sk-path' }, result.repo)))) : h(React.Fragment, null,
-            h('strong', null, t('store.recommended')),
-            (storeRepos ?? []).map(entry => h('div', { key: entry.repo, className: 'sk-entry' },
-              h('div', { className: 'sk-bar' },
-                h('span', { className: 'sk-name sk-grow' }, entry.repo),
-                h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => openRepo(entry.repo) }, t('store.viewRepo'))),
-              h('div', { className: 'sk-hint' }, ui.lang === 'zh' ? entry.zh : entry.en),
-              entry.note === undefined ? null : h('div', { className: 'sk-hint is-warn' }, ui.lang === 'zh' ? entry.note.zh : entry.note.en))))) : null,
         from === 'github' ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address.trim() !== '') stageGithub(address.trim()) } },
           h('input', { className: 'sk-input', value: address, spellCheck: false, placeholder: t('github.placeholder'), 'aria-label': t('lib.importFrom.github'), onChange: event => setAddress(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || address.trim() === '' }, t('github.read'))) : null,
@@ -1804,6 +1808,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [bodyHits, setBodyHits] = React.useState(() => new Set())
       const [bulk, setBulk] = React.useState(null)
       const [usage, setUsage] = React.useState(null)
+      const [importStart, setImportStart] = React.useState(undefined)
       const [usageDays, setUsageDays] = React.useState(30)
       const [usageLoading, setUsageLoading] = React.useState(false)
       const [usageError, setUsageError] = React.useState(null)
@@ -2074,6 +2079,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           }, (error) => { if (alive.current) show({ kind: 'warn', text: describe(error) }) })
           .finally(() => { if (alive.current) setLibBusy(false) })
       }
+      /** Open the import page on a repository chosen in the store. */
+      const openFromStore = (repo, pick) => {
+        setImportStart({ repo, pick, at: Date.now() })
+        setPanel('import')
+      }
       /** Count skill loads in the session history over `days` days. */
       const loadUsage = (days, refresh) => {
         setUsageLoading(true)
@@ -2170,7 +2180,9 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       } else if (data.registry === false) {
         body = h('div', { className: 'sk-note' }, t('noRegistry'))
       } else if (data.skills.length === 0) {
-        body = h('div', { className: 'sk-note' }, t('empty.none', { dsh: data.roots.dsh, agents: data.roots.agents }))
+        body = h('div', { className: 'sk-note' },
+          h('span', { className: 'sk-grow' }, t('empty.none', { dsh: data.roots.dsh, agents: data.roots.agents })),
+          h('button', { type: 'button', className: 'sk-btn', onClick: () => setPanel('store') }, t('store.button')))
       } else if (skills.length === 0) {
         body = h('div', { className: 'sk-hint' }, t('empty.filtered'))
       } else {
@@ -2211,7 +2223,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
               h('option', { value: 'name' }, t('sort.name')),
               h('option', { value: 'tokens' }, t('sort.tokens'))),
             h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'create', disabled: data === null || libBusy, onClick: () => setPanel(panel === 'create' ? null : 'create') }, t('lib.create')),
-            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'import', disabled: data === null || (libBusy && panel !== 'import'), onClick: () => setPanel(panel === 'import' ? null : 'import') }, t('lib.import')),
+            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'store', disabled: data === null, onClick: () => setPanel(panel === 'store' ? null : 'store') }, t('store.button')),
+            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'import', disabled: data === null || (libBusy && panel !== 'import'), onClick: () => { setImportStart(undefined); setPanel(panel === 'import' ? null : 'import') } }, t('lib.import')),
             h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'project', disabled: data === null, onClick: () => setPanel(panel === 'project' ? null : 'project') }, project === '' ? t('project.button') : `${t('project.button')} ✓`),
             h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'usage', disabled: data === null, onClick: openUsage }, t('usage.button')),
             githubSkills.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: checkUpdates }, t('github.check')),
@@ -2231,7 +2244,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('span', { className: 'sk-grow' }, t('skipped.note', { n: data.skipped.length })),
             h('button', { type: 'button', className: 'sk-btn', onClick: () => setPanel('skipped') }, t('skipped.show'))),
           data !== null && panel === 'create' ? h(CreateSkillPanel, { ui, data, busy: libBusy, onCancel: () => setPanel(null), onCreate: createSkill }) : null,
-          data !== null && panel === 'import' ? h(ImportSkillsPanel, { ui, data, busy: libBusy, onClose: () => setPanel(null), onImport: runImport }) : null,
+          data !== null && panel === 'store' ? h(StorePanel, { ui, data, onOpen: openFromStore, onClose: () => setPanel(null) }) : null,
+          data !== null && panel === 'import' ? h(ImportSkillsPanel, { key: importStart?.at ?? 0, ui, data, busy: libBusy, onClose: () => setPanel(null), onImport: runImport, start: importStart }) : null,
           notice === null ? null : h('div', { className: `sk-note ${notice.kind === 'done' ? 'is-done' : 'is-warn'}`, role: notice.kind === 'done' ? 'status' : 'alert' },
             h('span', { className: 'sk-grow' }, notice.text),
             notice.action === undefined ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: () => { const { run } = notice.action; show(null); run() } }, notice.action.label),
