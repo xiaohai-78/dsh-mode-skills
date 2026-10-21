@@ -1,0 +1,67 @@
+{
+  "repos": [
+    {
+      "repo": "anthropics/skills",
+      "zh": "Anthropic 官方的 Agent Skills：处理 Word、PDF、PPT、Excel，前端设计，以及创建 Skill 的 skill-creator 等",
+      "en": "Anthropic's own Agent Skills: Word, PDF, PowerPoint, and Excel files, frontend design, skill-creator, and more"
+    },
+    {
+      "repo": "openai/skills",
+      "zh": "OpenAI 为 Codex 准备的 Skill 目录",
+      "en": "OpenAI's skills catalog for Codex"
+    },
+    {
+      "repo": "obra/superpowers",
+      "zh": "一套软件开发方法和配套 Skill：头脑风暴、系统化调试、请求和接收代码审查等",
+      "en": "A software development method with skills: brainstorming, systematic debugging, requesting and receiving code review, and more"
+    },
+    {
+      "repo": "mattpocock/skills",
+      "zh": "Matt Pocock 从自己的 .agents 目录整理出来的工程师 Skill",
+      "en": "Engineering skills Matt Pocock keeps in his own .agents folder"
+    },
+    {
+      "repo": "vercel-labs/agent-skills",
+      "zh": "Vercel 官方的 Skill 合集：React、React Native 的最佳实践等",
+      "en": "Vercel's official skills: React and React Native best practices, and more"
+    },
+    {
+      "repo": "emilkowalski/skills",
+      "zh": "面向设计师和工程师的 Skill，包括动效",
+      "en": "Skills for designers and engineers, including animation"
+    },
+    {
+      "repo": "supabase/agent-skills",
+      "zh": "Supabase 官方 Skill：Supabase 和 Postgres 的最佳实践",
+      "en": "Supabase's official skills: Supabase and Postgres best practices"
+    },
+    {
+      "repo": "microsoft/azure-skills",
+      "zh": "微软官方的 Azure Skill，覆盖成本、合规等场景，另带 MCP 服务器配置",
+      "en": "Microsoft's official Azure skills, covering cost, compliance, and more, with MCP server settings",
+      "note": {
+        "zh": "部分 Skill 要配合 Azure 的 MCP 服务器",
+        "en": "Some skills need the Azure MCP servers"
+      }
+    },
+    {
+      "repo": "google/agents-cli",
+      "zh": "在 Google Cloud 上创建、评估、部署 Agent 的 Skill",
+      "en": "Skills for creating, evaluating, and deploying agents on Google Cloud"
+    },
+    {
+      "repo": "larksuite/cli",
+      "zh": "飞书官方命令行工具附带的 Skill：消息、文档、多维表格、日历等",
+      "en": "Skills that come with the official Lark/Feishu CLI: messages, docs, Base, calendar, and more",
+      "note": {
+        "zh": "这些 Skill 通过飞书命令行工具工作，用之前要先装好它",
+        "en": "These skills work through the Lark CLI, so install it first"
+      }
+    },
+    {
+      "repo": "github/awesome-copilot",
+      "zh": "GitHub Copilot 社区贡献的指令、Agent 和 Skill",
+      "en": "Instructions, agents, and skills contributed by the GitHub Copilot community"
+    }
+  ]
+}

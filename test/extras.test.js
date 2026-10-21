@@ -31,7 +31,7 @@ async function writeSkill(dir, text, extra = {}) {
 }
 
 /** Mount the host on a fake DSH whose catalogs come from `catalog(options)`, with the modes `standard` and `ptc`. */
-async function mount(catalog = () => []) {
+async function mount(catalog = () => [], services = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'dsh-mode-skills-profile-'))
   const routes = []
   const provided = {}
@@ -45,7 +45,7 @@ async function mount(catalog = () => []) {
     },
     agentPresets: { defaultId: 'standard', list: async () => [{ id: 'standard' }, { id: 'ptc' }], acquireScope: async id => ({ key: id, [Symbol.asyncDispose]: async () => {} }) },
     provide: (name, value) => { provided[name] = value },
-    get: name => (name === 'skills' ? { snapshot: async (options) => { snapshots.push(options); return { skills: catalog(options) } } } : name === 'tools' ? { schemas: () => [{ name: 'skill' }] } : undefined),
+    get: name => (Object.hasOwn(services, name) ? services[name] : name === 'skills' ? { snapshot: async (options) => { snapshots.push(options); return { skills: catalog(options) } } } : name === 'tools' ? { schemas: () => [{ name: 'skill' }] } : undefined),
     inject: (_names, callback) => callback({ effect: effect => effect(), connection: { fetch: { register: route => routes.push(route) } } }),
     logger: { warn: () => {} },
   })
@@ -271,6 +271,44 @@ test('leaves a GitHub skill alone while it is in the trash', async () => {
     await value('deleteSkill', { skill: 'trashed-one' })
     assert.deepEqual(await value('checkUpdates'), { checked: 0, updates: [], failed: [] })
     assert.equal((await call('updateGithub', { skills: ['trashed-one'] })).code, 'bad-request')
+  } finally {
+    globalThis.fetch = original
+  }
+})
+
+test('counts skill loads per mode from the session history, and says so when there is none', async () => {
+  const day = 24 * 60 * 60 * 1000
+  const now = Date.now()
+  const sessions = [
+    { header: { id: 'a', createdAt: now - 2 * day, agentPreset: 'ptc' }, live: false, persisted: true, events: [{ type: 'user/message', time: now - day, data: { source: { kind: 'skill-invocation', name: 'standup', form: 'instructions' } } }] },
+    { header: { id: 'b', createdAt: now - 40 * day }, live: false, persisted: true, events: [
+      { type: 'tool/call', time: now - 40 * day, data: { callId: 'c1', name: 'skill', arguments: '{"name":"standup"}' } },
+      { type: 'tool/result', time: now - 40 * day, data: { message: { toolCallId: 'c1' } } },
+    ] },
+  ]
+  const service = { listSessions: async () => sessions.map(({ events: _events, ...record }) => record), readSession: async id => ({ events: sessions.find(record => record.header.id === id).events }) }
+  const { value } = await mount(() => [], { sessionQuery: service })
+  const month = await value('usage', { days: 30 })
+  assert.deepEqual([month.days, month.scanned, month.total, month.complete], [30, 2, 2, true])
+  assert.deepEqual(month.skills.standup.modes, { ptc: { model: 0, user: 1, lastAt: now - day } })
+  const year = await value('usage', { days: 365, refresh: true })
+  assert.deepEqual(year.skills.standup.modes.standard, { model: 1, user: 0, lastAt: now - 40 * day }, 'a session without a preset is the default mode')
+  assert.equal((await value('usage', { days: 5 })).days, 30, 'an unknown window falls back to 30 days')
+  const { call: bare } = await mount(() => [], { sessionQuery: undefined })
+  assert.equal((await bare('usage')).code, 'usage-unavailable')
+})
+
+test('searches the store once for a repeated text, and lists the shipped repositories', async () => {
+  const original = globalThis.fetch
+  let requests = 0
+  globalThis.fetch = async () => { requests += 1; return Response.json({ skills: [{ source: 'o/r', skillId: 'pdf', installs: 3 }] }) }
+  try {
+    const { value, call } = await mount()
+    assert.deepEqual((await value('storeSearch', { query: 'PDF' })).results, [{ id: 'o/r/pdf', repo: 'o/r', skill: 'pdf', installs: 3 }])
+    await value('storeSearch', { query: ' pdf ' })
+    assert.equal(requests, 1)
+    assert.equal((await call('storeSearch', { query: 'x' })).code, 'store-query-short')
+    assert.ok((await value('storeIndex')).repos.length >= 5)
   } finally {
     globalThis.fetch = original
   }

@@ -34,9 +34,11 @@ import { SkillFileError, VERSION_MAX_BYTES, VERSION_MAX_FILES, readVersionMeta, 
 import { DESCRIPTION_MAX_CHARS, agentRoots, copySkill, displayPath, expandHome, findPluginSkills, fingerprint, hasSkillFile, importRoots, listSkillDirs, newSkillText, readCandidate, replaceSkill, scriptFiles, skillFiles, skillRoots, sourceState } from './skill-import.js'
 import { NOTE_MAX_CHARS, SKILL_NAME, VERSION_ID, isEditableSkill, nextVersionId, parseSkillFile, plainLines, withLineEndingsOf, withoutVersion } from './skill-store.js'
 import { POLICY_PROVIDERS, remembered, summarize } from './skill-view.js'
+import { searchStore, storeIndex } from './store.js'
 import { StateFileError, StateStore } from './state.js'
 import { catalogTokens, skillTokens } from './tokens.js'
 import { emptyTrash, listTrash, moveItem, purgeTrash, restoreTrash, trashSkill } from './trash.js'
+import { collectUsage, summarizeUsage } from './usage.js'
 import { entryPath, readZip, writeZip, zipComment, zipPaths } from './zip.js'
 
 const ROUTE = '/api/dsh-mode-skills'
@@ -51,6 +53,11 @@ const SKILL_FILE_MAX_CHARS = 200000
 const IMPORT_SOURCES = new Set(['codex', 'codex-system', 'claude', 'claude-plugin', 'folder'])
 /** How long the page waits after writing a skill folder, so the filesystem provider's watcher has seen it. */
 const WATCH_SETTLE_MS = 800
+/** The time windows the usage figures can cover, in days, and how long a store search is reused. */
+const USAGE_WINDOWS = [7, 30, 90, 365]
+const DAY_MS = 24 * 60 * 60 * 1000
+const STORE_TTL_MS = 5 * 60 * 1000
+const STORE_CACHE_SIZE = 50
 /** A skill's setting in one mode, and the settings kept as lists in the mode's record. */
 const MODE_STATES = new Set(['on', 'manual', 'model', 'off'])
 const LISTED_STATES = ['off', 'manual', 'model']
@@ -79,7 +86,7 @@ class ActionError extends Error {
 }
 
 export function apply(ctx) {
-  const m = { ctx, scans: new Map(), store: new StateStore(join(dirname(ctx.configEditor.documentPath), STATE_DIR)), watchers: new Set() }
+  const m = { ctx, scans: new Map(), usageCache: new Map(), storeCache: new Map(), store: new StateStore(join(dirname(ctx.configEditor.documentPath), STATE_DIR)), watchers: new Set() }
   ctx.provide('dshModeSkills', {
     /** The skills a mode turns off, and those it leaves to the user with each one's file and summary. */
     policyFor: preset => policyFor(m, preset),
@@ -141,6 +148,9 @@ const ACTIONS = {
   checkUpdates: (m, body) => checkUpdates(m, body),
   updateGithub: (m, body) => updateGithub(m, body),
   clearModes: (m, body) => clearModes(m, body),
+  usage: (m, body) => usageOf(m, body),
+  storeSearch: (m, body) => storeSearch(m, body),
+  storeIndex: async () => ({ repos: await storeIndex() }),
 }
 
 function reply(body) {
@@ -1536,4 +1546,39 @@ async function clearModes(m, body) {
   for (const id of ids) forget(m, id)
   for (const listener of m.watchers) listener()
   return result
+}
+
+/**
+ * How often each skill was loaded in a time window, from the session history (usage.js).
+ * @param {{ days?: unknown, refresh?: unknown }} body - the window in days (7, 30, 90, or 365; 30 by default), and
+ *   whether to read every session again instead of reusing saved ones.
+ * @returns {Promise<object>} `days`, `since`, how many sessions exist (`total`), were read (`scanned`) and could not be
+ *   (`failed`), whether older ones were left out (`truncated`) or the time budget ran out (`complete` false), and `skills`
+ *   (per name: loads by the model and the user, first and last time, and the same per mode).
+ * @throws {ActionError} `usage-unavailable` when the composition has no `sessionQuery` service.
+ */
+async function usageOf(m, body) {
+  const service = m.ctx.get('sessionQuery')
+  if (service === undefined) throw new ActionError('usage-unavailable', 'This composition has no session history, so usage cannot be counted')
+  const days = USAGE_WINDOWS.includes(body.days) ? body.days : 30
+  const since = Date.now() - days * DAY_MS
+  const { sessions, ...counts } = await collectUsage({ service, defaultMode: m.ctx.agentPresets.defaultId ?? '', cache: m.usageCache, force: body.refresh === true })
+  return { days, since, ...counts, skills: summarizeUsage(sessions, since) }
+}
+
+/**
+ * Search the skill store, reusing a recent answer for the same text.
+ * @param {{ query?: unknown }} body - the text to look for.
+ * @returns {Promise<{ results: object[] }>} `{ id, repo, skill, installs }` per result.
+ */
+async function storeSearch(m, body) {
+  const query = typeof body.query === 'string' ? body.query.trim() : ''
+  const key = query.toLowerCase()
+  const cached = m.storeCache.get(key)
+  if (cached !== undefined && Date.now() - cached.at < STORE_TTL_MS) return { results: cached.results }
+  const results = await searchStore(query)
+  m.storeCache.delete(key)
+  m.storeCache.set(key, { at: Date.now(), results })
+  if (m.storeCache.size > STORE_CACHE_SIZE) m.storeCache.delete(m.storeCache.keys().next().value)
+  return { results }
 }

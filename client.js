@@ -19,7 +19,7 @@ window.__ModuleLoader__.load({
       'nav': 'Skill 管理',
       'title': 'Skill 管理',
       'intro': '查看所有 Skill，并按模式开关',
-      'preview': '预览版：Skill 商城会在后续版本加入，现在可以直接从 GitHub 地址安装',
+      'preview': '预览版',
       'search': '搜索名称、描述或正文',
       'allModes': '全部模式',
       'refresh': '刷新',
@@ -337,12 +337,55 @@ window.__ModuleLoader__.load({
       'err.alias-invalid': '显示名只能一行，最多 {max} 字',
       'err.tags-invalid': '最多 {max} 个标签，每个不超过 {chars} 字，不能含逗号',
       'err.folder-relative': '请填项目文件夹的完整路径，例如 ~/code/my-app',
+      'usage.button': '使用统计',
+      'usage.title': '使用统计',
+      'usage.intro': '统计各模式的会话里每个 Skill 被加载了多少次：模型调用 skill 工具，或你输入 /名字。只读名称和时间，不读对话内容',
+      'usage.days': '最近 {n} 天',
+      'usage.summary': '读取了 {scanned} 个会话（共 {total} 个）',
+      'usage.truncated': '会话太多，只读了最新的 {n} 个',
+      'usage.incomplete': '时间不够，只读了一部分会话；再点一次「重新统计」会接着读，读过的会话已缓存',
+      'usage.failed': '{n} 个会话读取失败，没有计入',
+      'usage.refresh': '重新统计',
+      'usage.loading': '正在统计…',
+      'usage.none': '这段时间里没有 Skill 被加载过',
+      'usage.calls': '{n} 次',
+      'usage.once': '1 次',
+      'usage.split': '模型 {model} · 手动 {user}',
+      'usage.last': '最近 {when}',
+      'usage.inMode': '{mode} {n} 次',
+      'usage.unused': '没用过的 Skill（{n}）',
+      'usage.unusedHint': '这段时间里任何模式都没加载过它们。想少占点上下文，可以在某个模式里关掉',
+      'usage.offIn': '在这个模式关闭',
+      'usage.confirmOff': '在「{mode}」里关闭这 {n} 个没用过的 Skill？之后可以撤销',
+      'usage.noneUnused': '每个 Skill 在这段时间里都用过',
+      'detail.usage': '使用情况',
+      'detail.usageNone': '这段时间里没用过',
+      'detail.usageLine': '{times}（模型 {model}、手动 {user}），最近 {when}',
+      'err.usage-unavailable': '当前组合没有会话历史服务，统计不了使用情况',
+      'lib.importFrom.store': '商城',
+      'store.placeholder': '搜索 Skill，例如 pdf、code review、数据库',
+      'store.search': '搜索',
+      'store.hint': '搜索来自 skills.sh（公开的 Skill 目录，数字是它统计的安装次数），搜索词会发给它。点「查看并安装」会先读取仓库、让你勾选，不会直接安装',
+      'store.recommended': '推荐的仓库',
+      'store.results': '搜索结果（{n}）',
+      'store.empty': '没有找到匹配的 Skill',
+      'store.installs': '{n} 次安装',
+      'store.view': '查看并安装',
+      'store.viewRepo': '查看这个仓库',
+      'store.installed': '已安装',
+      'store.sameName': '已有同名',
+      'store.sameNameHint': '已经有一个叫这个名字的 Skill，不是从这个仓库装的；安装时要改名或覆盖',
+      'store.searching': '正在搜索…',
+      'err.store-query-short': '至少输入 {min} 个字',
+      'err.store-network': '连不上 skills.sh。需要代理时，请先设置 HTTPS_PROXY 和 NODE_USE_ENV_PROXY=1 再启动 DSH',
+      'err.store-rate-limited': 'skills.sh 请求太频繁，稍等一会儿再搜',
+      'err.store-failed': 'skills.sh 返回了 {status}，稍后再试',
     }
     const EN = {
       'nav': 'Skills',
       'title': 'Skill Manager',
       'intro': 'See every skill and turn it on or off per mode',
-      'preview': 'Preview: a skill store comes in a later version; for now you can install from a GitHub address',
+      'preview': 'Preview',
       'search': 'Search names, descriptions, and text',
       'allModes': 'All modes',
       'refresh': 'Refresh',
@@ -660,6 +703,49 @@ window.__ModuleLoader__.load({
       'err.alias-invalid': 'The display name must be one line of at most {max} characters',
       'err.tags-invalid': 'At most {max} tags of {chars} characters each, without commas',
       'err.folder-relative': 'Give the full path of the project folder, e.g. ~/code/my-app',
+      'usage.button': 'Usage',
+      'usage.title': 'Usage',
+      'usage.intro': 'How often each skill was loaded in each mode\'s sessions: the model calling the skill tool, or you typing /name. Only names and times are read, never message text',
+      'usage.days': 'Last {n} days',
+      'usage.summary': 'Read {scanned} sessions (of {total})',
+      'usage.truncated': 'There are many sessions; only the newest {n} were read',
+      'usage.incomplete': 'Time ran out and only some sessions were read; press Count again to continue, sessions already read are cached',
+      'usage.failed': '{n} sessions could not be read and are not counted',
+      'usage.refresh': 'Count again',
+      'usage.loading': 'Counting…',
+      'usage.none': 'No skill was loaded in this time',
+      'usage.calls': '{n} times',
+      'usage.once': '1 time',
+      'usage.split': 'model {model} · manual {user}',
+      'usage.last': 'last {when}',
+      'usage.inMode': '{mode} {n}',
+      'usage.unused': 'Skills never used ({n})',
+      'usage.unusedHint': 'No mode loaded these in this time. To save context, turn them off in a mode',
+      'usage.offIn': 'Turn off in this mode',
+      'usage.confirmOff': 'Turn off these {n} unused skills in "{mode}"? You can undo it afterwards',
+      'usage.noneUnused': 'Every skill was used in this time',
+      'detail.usage': 'Usage',
+      'detail.usageNone': 'Not used in this time',
+      'detail.usageLine': '{times} (model {model}, manual {user}), last {when}',
+      'err.usage-unavailable': 'This composition has no session history, so usage cannot be counted',
+      'lib.importFrom.store': 'Store',
+      'store.placeholder': 'Search skills, e.g. pdf, code review, database',
+      'store.search': 'Search',
+      'store.hint': 'Search is served by skills.sh, a public skill directory (the number is its install count); your search text is sent to it. View and install reads the repository and lets you choose; nothing is installed right away',
+      'store.recommended': 'Recommended repositories',
+      'store.results': 'Results ({n})',
+      'store.empty': 'No matching skills',
+      'store.installs': '{n} installs',
+      'store.view': 'View and install',
+      'store.viewRepo': 'View this repository',
+      'store.installed': 'Installed',
+      'store.sameName': 'Name taken',
+      'store.sameNameHint': 'A skill with this name exists that did not come from this repository; installing means renaming or replacing it',
+      'store.searching': 'Searching…',
+      'err.store-query-short': 'Type at least {min} characters',
+      'err.store-network': 'Cannot reach skills.sh. If you need a proxy, set HTTPS_PROXY and NODE_USE_ENV_PROXY=1 before starting DSH',
+      'err.store-rate-limited': 'skills.sh asks to slow down; search again in a moment',
+      'err.store-failed': 'skills.sh answered {status}; try again later',
     }
 
     const CSS = `
@@ -968,6 +1054,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [upload, setUpload] = React.useState(null)
       const [over, setOver] = React.useState(false)
       const [address, setAddress] = React.useState('')
+      const [storeQuery, setStoreQuery] = React.useState('')
+      const [storeResults, setStoreResults] = React.useState(null)
+      const [storeRepos, setStoreRepos] = React.useState(null)
+      const [storeLoading, setStoreLoading] = React.useState(false)
+      const [storeError, setStoreError] = React.useState(null)
       const staged = from === 'upload' || from === 'github'
       const choicesFor = groups => new Map(groups.flatMap(group => group.items.map((item) => {
         const prefix = group.source === 'folder' || group.source === 'upload' || group.source === 'github' ? '' : `${group.source.split(/[-:]/)[0]}-`
@@ -1037,7 +1128,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         }, failure => setError(ui.describe(failure))).finally(() => setLoading(false))
       }
       /** Download a GitHub repository to the Host and list the skills in it. */
-      const stageGithub = (url) => {
+      const stageGithub = (url, pick) => {
         setLoading(true)
         setError(null)
         setSources(null)
@@ -1047,10 +1138,36 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           const group = { source: 'github', label: t('lib.group.github', { name: value.label }), dir: where, exists: true, items: value.items }
           setUpload(value.upload)
           setSources({ roots: data.roots, groups: [group] })
-          setChoices(choicesFor([group]))
+          const initial = choicesFor([group])
+          // Coming from the store, only the skill that was asked for starts selected.
+          if (pick !== undefined) {
+            for (const item of value.items) {
+              const wanted = item.name === pick || item.path.split(/[\\/]/).pop() === pick
+              if (wanted && (item.status === 'new' || item.status === 'rename')) initial.set(item.path, { ...initial.get(item.path), on: true })
+            }
+          }
+          setChoices(initial)
           if (value.items.length === 0) setError(t('github.noSkill'))
           else if (value.truncated) setReport([{ key: 'truncated', text: t('github.truncated') }])
         }, failure => setError(ui.describe(failure))).finally(() => setLoading(false))
+      }
+      /** Search the store; an empty store answer is not an error. */
+      const searchStore = () => {
+        setStoreLoading(true)
+        setStoreError(null)
+        post(ROUTE, 'storeSearch', { query: storeQuery }).then(value => setStoreResults(value.results), failure => setStoreError(ui.describe(failure))).finally(() => setStoreLoading(false))
+      }
+      React.useEffect(() => {
+        if (from !== 'store' || storeRepos !== null) return
+        post(ROUTE, 'storeIndex', {}).then(value => setStoreRepos(value.repos), () => setStoreRepos([]))
+      }, [from])
+      /** Read a store entry's repository through the GitHub flow, with its skill selected. */
+      const openRepo = (repo, pick) => {
+        setFrom('github')
+        setAddress(repo)
+        setUpload(null)
+        setReport([])
+        stageGithub(repo, pick)
       }
       const onDrop = (event) => {
         event.preventDefault()
@@ -1143,7 +1260,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('lib.import')),
           h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
-        h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
+        h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import') }, ['agents', 'folder', 'upload', 'github', 'store'].map(name => h('button', {
           key: name, type: 'button', role: 'radio', 'aria-checked': from === name,
           onClick: () => { setFrom(name); setSources(null); setUpload(null); setError(null); setReport([]) },
         }, t(`lib.importFrom.${name}`)))),
@@ -1157,6 +1274,33 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('label', { className: 'sk-btn' }, t('upload.pickZip'), h('input', { type: 'file', accept: '.zip,application/zip', hidden: true, onChange: onPick })),
           h('label', { className: 'sk-btn' }, t('upload.pickFolder'), h('input', { type: 'file', webkitdirectory: '', multiple: true, hidden: true, onChange: onPick })))) : null,
+        from === 'store' ? h('div', { className: 'sk-section' },
+          h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if ([...storeQuery.trim()].length >= 2) searchStore() } },
+            h('input', { className: 'sk-input', value: storeQuery, spellCheck: false, placeholder: t('store.placeholder'), 'aria-label': t('lib.importFrom.store'), onChange: event => setStoreQuery(event.target.value) }),
+            h('button', { type: 'submit', className: 'sk-btn', disabled: storeLoading || [...storeQuery.trim()].length < 2 }, t('store.search'))),
+          h('div', { className: 'sk-hint' }, t('store.hint')),
+          storeError === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, storeError),
+          storeLoading ? h('div', { className: 'sk-hint' }, t('store.searching')) : null,
+          storeResults !== null ? h(React.Fragment, null,
+            h('div', { className: 'sk-bar' },
+              h('strong', { className: 'sk-grow' }, t('store.results', { n: storeResults.length })),
+              h('button', { type: 'button', className: 'sk-link', onClick: () => setStoreResults(null) }, t('store.recommended'))),
+            storeResults.length === 0 ? h('div', { className: 'sk-hint' }, t('store.empty')) : storeResults.map(result => h('div', { key: result.id, className: 'sk-entry' },
+              h('div', { className: 'sk-bar' },
+                h('span', { className: 'sk-name sk-grow' }, result.skill),
+                taken.has(result.skill) ? (data.skills.find(skill => skill.name === result.skill)?.imported?.github?.repo === result.repo
+                  ? h('span', { className: 'sk-badge' }, t('store.installed'))
+                  : h('span', { className: 'sk-badge is-warn', title: t('store.sameNameHint') }, t('store.sameName'))) : null,
+                h('span', { className: 'sk-hint' }, t('store.installs', { n: result.installs.toLocaleString(ui.lang === 'zh' ? 'zh-CN' : 'en-US') })),
+                h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => openRepo(result.repo, result.skill) }, t('store.view'))),
+              h('div', { className: 'sk-hint sk-path' }, result.repo)))) : h(React.Fragment, null,
+            h('strong', null, t('store.recommended')),
+            (storeRepos ?? []).map(entry => h('div', { key: entry.repo, className: 'sk-entry' },
+              h('div', { className: 'sk-bar' },
+                h('span', { className: 'sk-name sk-grow' }, entry.repo),
+                h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => openRepo(entry.repo) }, t('store.viewRepo'))),
+              h('div', { className: 'sk-hint' }, ui.lang === 'zh' ? entry.zh : entry.en),
+              entry.note === undefined ? null : h('div', { className: 'sk-hint is-warn' }, ui.lang === 'zh' ? entry.note.zh : entry.note.en))))) : null,
         from === 'github' ? h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address.trim() !== '') stageGithub(address.trim()) } },
           h('input', { className: 'sk-input', value: address, spellCheck: false, placeholder: t('github.placeholder'), 'aria-label': t('lib.importFrom.github'), onChange: event => setAddress(event.target.value) }),
           h('button', { type: 'submit', className: 'sk-btn', disabled: loading || address.trim() === '' }, t('github.read'))) : null,
@@ -1454,6 +1598,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             skill.imported?.github?.gone ? h('span', { className: 'sk-badge' }, t('github.gone')) : null,
             h('span', { className: 'sk-desc' }, skill.description ?? ''),
             skill.tokens === undefined ? null : h('span', { className: 'sk-meta', title: t('tok.hint') }, t('tok.skill', { n: skill.tokens })),
+            usageOf(ui.usage, skill.name) === undefined ? null : h('span', { className: 'sk-meta' }, times(t, usageOf(ui.usage, skill.name).model + usageOf(ui.usage, skill.name).user)),
             h('span', { className: 'sk-meta' }, summary)),
           side),
         open ? h('div', { className: 'sk-body' },
@@ -1463,10 +1608,80 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             skill.source === undefined ? null : [h('dt', { key: 's:t' }, t('detail.source')), h('dd', { key: 's:d' }, ui.sourceName(skill))],
             skill.whenToUse === undefined ? null : [h('dt', { key: 'w:t' }, t('detail.whenToUse')), h('dd', { key: 'w:d' }, skill.whenToUse)],
             skill.tokens === undefined ? null : [h('dt', { key: 'k:t' }, t('detail.tokens')), h('dd', { key: 'k:d', title: t('tok.hint') }, t('tok.skill', { n: skill.tokens }))],
+            ui.usage === null ? null : [h('dt', { key: 'u:t' }, t('detail.usage')), h('dd', { key: 'u:d' }, usageOf(ui.usage, skill.name) === undefined
+              ? t('detail.usageNone')
+              : t('detail.usageLine', { times: times(t, usageOf(ui.usage, skill.name).model + usageOf(ui.usage, skill.name).user), model: usageOf(ui.usage, skill.name).model, user: usageOf(ui.usage, skill.name).user, when: ago(ui.lang, usageOf(ui.usage, skill.name).lastAt) }))],
             h('dt', { key: 'm:t' }, t('detail.modes')),
             h('dd', { key: 'm:d' }, h(ModeControls, { ui, data, skill }))),
           h(MetaEditor, { key: `${skill.name}\0${skill.alias ?? ''}\0${(skill.tags ?? []).join()}`, ui, skill }),
           h(SkillLibrary, { ui, skill, autoEdit, onAutoEdited })) : null)
+    }
+
+    /** A moment as "3 days ago" or "in 2 hours", in the page's language. */
+    function ago(lang, at) {
+      const rtf = new Intl.RelativeTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { numeric: 'auto' })
+      const minutes = Math.round((at - Date.now()) / 60000)
+      if (Math.abs(minutes) < 60) return rtf.format(minutes, 'minute')
+      const hours = Math.round(minutes / 60)
+      return Math.abs(hours) < 24 ? rtf.format(hours, 'hour') : rtf.format(Math.round(hours / 24), 'day')
+    }
+
+    /** "1 time" or "3 times". */
+    function times(t, n) {
+      return n === 1 ? t('usage.once') : t('usage.calls', { n })
+    }
+
+    /** The usage figures of one skill, or undefined when it was not loaded in the window. */
+    function usageOf(usage, name) {
+      return usage !== null && Object.hasOwn(usage.skills, name) ? usage.skills[name] : undefined
+    }
+
+    /** How often each skill was loaded, in which mode, and the skills nobody loaded, with a way to turn those off. */
+    function UsagePanel({ ui, data, usage, loading, error, days, onDays, onRefresh, onClose }) {
+      const { t } = ui
+      const usable = usableModes(data)
+      const [mode, setMode] = React.useState(() => usable[0]?.id ?? '')
+      const [confirm, setConfirm] = React.useState(false)
+      const used = usage === null ? [] : Object.entries(usage.skills).map(([name, figures]) => ({ name, ...figures })).sort((a, b) => b.model + b.user - (a.model + a.user) || b.lastAt - a.lastAt)
+      const unused = usage === null ? [] : data.skills.filter(skill => !Object.hasOwn(usage.skills, skill.name))
+      const chosen = data.modes.find(entry => entry.id === mode)
+      const candidates = chosen === undefined ? [] : unused.filter(skill => cell(ui, data, skill, chosen).reason === undefined && ui.choiceOf(chosen, skill) !== 'off')
+      const label = id => ui.modeName(data.modes.find(entry => entry.id === id) ?? { id })
+      return h('div', { className: 'sk-panel', role: 'group', 'aria-label': t('usage.title'), onKeyDown: onEscape(onClose) },
+        h('div', { className: 'sk-bar' },
+          h('strong', { className: 'sk-grow' }, t('usage.title')),
+          h('select', { className: 'sk-select', value: days, 'aria-label': t('usage.days', { n: days }), onChange: event => onDays(Number(event.target.value)) },
+            [7, 30, 90, 365].map(n => h('option', { key: n, value: n }, t('usage.days', { n })))),
+          h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: onRefresh }, t(loading ? 'usage.loading' : 'usage.refresh')),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('lib.cancel'))),
+        h('div', { className: 'sk-hint' }, t('usage.intro')),
+        error === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, error),
+        usage === null ? (loading ? h('div', { className: 'sk-skeleton', 'aria-busy': true }, h('span')) : null) : h(React.Fragment, null,
+          h('div', { className: 'sk-hint' },
+            [t('usage.summary', { scanned: usage.scanned, total: usage.total }),
+              usage.truncated ? t('usage.truncated', { n: usage.scanned + usage.failed }) : undefined,
+              usage.complete ? undefined : t('usage.incomplete'),
+              usage.failed > 0 ? t('usage.failed', { n: usage.failed }) : undefined].filter(Boolean).join(' · ')),
+          used.length === 0 ? h('div', { className: 'sk-hint' }, t('usage.none')) : used.map(entry => h('div', { key: entry.name, className: 'sk-entry' },
+            h('div', { className: 'sk-bar' },
+              h('span', { className: 'sk-name sk-grow' }, entry.name),
+              h('strong', null, times(t, entry.model + entry.user)),
+              h('span', { className: 'sk-hint' }, t('usage.split', { model: entry.model, user: entry.user })),
+              h('span', { className: 'sk-hint' }, t('usage.last', { when: ago(ui.lang, entry.lastAt) }))),
+            h('div', { className: 'sk-modes' }, Object.entries(entry.modes).sort(([, a], [, b]) => b.model + b.user - (a.model + a.user)).map(([id, figures]) => h('span', { key: id, className: 'sk-chip' }, t('usage.inMode', { mode: label(id), n: figures.model + figures.user })))))),
+          h('div', { className: 'sk-section' },
+            h('strong', null, t('usage.unused', { n: unused.length })),
+            unused.length === 0 ? h('div', { className: 'sk-hint' }, t('usage.noneUnused')) : h(React.Fragment, null,
+              h('div', { className: 'sk-hint' }, t('usage.unusedHint')),
+              h('div', { className: 'sk-modes' }, unused.map(skill => h('span', { key: skill.name, className: 'sk-chip' }, skill.name))),
+              usable.length === 0 ? null : h('div', { className: 'sk-bar' },
+                h('select', { className: 'sk-select', value: mode, 'aria-label': t('usage.offIn'), onChange: (event) => { setMode(event.target.value); setConfirm(false) } },
+                  usable.map(entry => h('option', { key: entry.id, value: entry.id }, ui.modeName(entry)))),
+                h('button', { type: 'button', className: 'sk-btn sk-danger', disabled: candidates.length === 0 || ui.busy.has('bulk'), onClick: () => setConfirm(true) }, `${t('usage.offIn')} (${candidates.length})`)),
+              confirm && chosen !== undefined ? h(ConfirmBox, {
+                ui, text: t('usage.confirmOff', { mode: ui.modeName(chosen), n: candidates.length }), action: t('usage.offIn'), danger: true, busy: ui.busy.has('bulk'),
+                onCancel: () => setConfirm(false), onConfirm: () => { setConfirm(false); ui.setMany(candidates.map(skill => ({ mode: chosen, skill, target: 'off' }))) },
+              }) : null))))
     }
 
     /** The project folder whose own skills the list also shows. */
@@ -1588,6 +1803,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [project, setProject] = React.useState(savedProject)
       const [bodyHits, setBodyHits] = React.useState(() => new Set())
       const [bulk, setBulk] = React.useState(null)
+      const [usage, setUsage] = React.useState(null)
+      const [usageDays, setUsageDays] = React.useState(30)
+      const [usageLoading, setUsageLoading] = React.useState(false)
+      const [usageError, setUsageError] = React.useState(null)
       const projectRef = React.useRef(project)
       const alive = React.useRef(true)
       const noticeTimer = React.useRef(undefined)
@@ -1855,6 +2074,19 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           }, (error) => { if (alive.current) show({ kind: 'warn', text: describe(error) }) })
           .finally(() => { if (alive.current) setLibBusy(false) })
       }
+      /** Count skill loads in the session history over `days` days. */
+      const loadUsage = (days, refresh) => {
+        setUsageLoading(true)
+        setUsageError(null)
+        return post(ROUTE, 'usage', { days, ...refresh ? { refresh: true } : {} }).then((value) => { if (alive.current) setUsage(value) }, (error) => {
+          if (alive.current) setUsageError(describe(error))
+        }).finally(() => { if (alive.current) setUsageLoading(false) })
+      }
+      const openUsage = () => {
+        const opening = panel !== 'usage'
+        setPanel(opening ? 'usage' : null)
+        if (opening && usage === null && !usageLoading) void loadUsage(usageDays, false)
+      }
       /** Show the skills of a project folder (or none, for an empty path). */
       const applyProject = (value) => {
         const next = value.trim()
@@ -1878,6 +2110,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         choiceOf,
         updateGithub,
         project,
+        usage,
         notify: (kind, text) => { if (alive.current) show({ kind, text }) },
         importUpload: (upload, items, target) => runImport(items, target, upload),
         busy,
@@ -1980,9 +2213,14 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'create', disabled: data === null || libBusy, onClick: () => setPanel(panel === 'create' ? null : 'create') }, t('lib.create')),
             h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'import', disabled: data === null || (libBusy && panel !== 'import'), onClick: () => setPanel(panel === 'import' ? null : 'import') }, t('lib.import')),
             h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'project', disabled: data === null, onClick: () => setPanel(panel === 'project' ? null : 'project') }, project === '' ? t('project.button') : `${t('project.button')} ✓`),
+            h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'usage', disabled: data === null, onClick: openUsage }, t('usage.button')),
             githubSkills.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn', disabled: libBusy, onClick: checkUpdates }, t('github.check')),
             data === null || data.trash.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'trash', onClick: () => setPanel(panel === 'trash' ? null : 'trash') }, t('trash.button', { n: data.trash.length })),
             h('button', { type: 'button', className: 'sk-btn', disabled: loading, onClick: () => load(true) }, t('refresh'))),
+          data !== null && panel === 'usage' ? h(UsagePanel, {
+            ui, data, usage, loading: usageLoading, error: usageError, days: usageDays,
+            onDays: (days) => { setUsageDays(days); void loadUsage(days, false) }, onRefresh: () => loadUsage(usageDays, true), onClose: () => setPanel(null),
+          }) : null,
           data !== null && panel === 'project' ? h(ProjectPanel, { ui, project, onApply: applyProject, onClose: () => setPanel(null) }) : null,
           data !== null && data.project !== undefined && panel !== 'project' ? h('div', { className: 'sk-note' },
             h('span', { className: 'sk-grow' }, t('project.active', { path: data.project })),
