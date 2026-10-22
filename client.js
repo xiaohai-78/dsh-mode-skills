@@ -49,6 +49,8 @@ window.__ModuleLoader__.load({
       'state.error': '读取失败',
       'toggle.on': '在「{mode}」中关闭',
       'toggle.off': '在「{mode}」中打开',
+      'cell.toggle': '{name} 在「{mode}」中',
+      'cell.special': '{name} 在「{mode}」中：{state}，展开修改',
       'reason.noTool': '这个模式不加载 Skill',
       'reason.notEditable': '这个模式不能在这里修改',
       'reason.missing': '这个模式里没有这个 Skill',
@@ -484,6 +486,8 @@ window.__ModuleLoader__.load({
       'state.error': 'Could not read',
       'toggle.on': 'Turn off in "{mode}"',
       'toggle.off': 'Turn on in "{mode}"',
+      'cell.toggle': '{name} in "{mode}"',
+      'cell.special': '{name} in "{mode}": {state}; expand to change',
       'reason.noTool': 'This mode does not load skills',
       'reason.notEditable': 'This mode cannot be changed here',
       'reason.missing': 'This mode does not have this skill',
@@ -940,6 +944,14 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-switch[aria-checked="true"] { background: var(--dsw-alias-state-business-primary); }
 .sk-switch[aria-checked="true"]::after { transform: translateX(12px); }
 .sk-switch:disabled { opacity: .4; cursor: default; }
+.sk-cells { flex: none; display: flex; align-items: center; padding-right: 8px; }
+.sk-cell { flex: none; width: 72px; box-sizing: border-box; padding: 0 4px; display: flex; justify-content: center; align-items: center; }
+.sk-cell .sk-switch { margin-right: 0; }
+.sk-cell.is-none { color: var(--dsw-alias-label-tertiary); }
+.sk-colhead { display: flex; align-items: flex-end; margin-bottom: -4px; padding-right: .5px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
+.sk-colhead .sk-cell { display: block; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-cellpill { flex: none; font: inherit; font-size: 11px; line-height: 18px; padding: 0 7px; border: 0; border-radius: 9px; background: var(--sk-tint); color: var(--dsw-alias-state-business-primary); white-space: nowrap; cursor: pointer; }
+.sk-cells-alt { display: none; }
 .sk-skeleton { display: flex; flex-direction: column; gap: 8px; }
 .sk-skeleton span { display: block; height: 40px; border-radius: var(--sk-r-md); background: var(--sk-tint); animation: sk-pulse .9s ease-in-out infinite alternate; }
 .sk-end { justify-content: flex-end; }
@@ -1001,7 +1013,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-footer-update label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 .sk-footer-update input { margin: 0; }
 @media (hover: hover) { .sk-head:hover, .sk-btn:hover:not(:disabled), button.sk-chip:hover:not(:disabled), .sk-seg button:hover, .sk-grouphead:hover { background: var(--dsw-alias-interactive-bg-hover-accent, var(--sk-tint)); } .sk-primary:hover:not(:disabled) { background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill)); } .sk-link:hover { text-decoration: underline; } }
-@container (max-width: 560px) { .sk-desc, .sk-narrow-hide { display: none; } .sk-actions { width: 100%; } .sk-head .sk-name { flex: 0 1 auto; } }
+@container (max-width: 560px) { .sk-desc, .sk-narrow-hide { display: none; } .sk-actions { width: 100%; } .sk-head .sk-name { flex: 0 1 auto; } .sk-top > .sk-cells, .sk-colhead { display: none; } .sk-cells-alt { display: inline; } }
 `
 
     class ActionFailure extends Error {
@@ -1543,7 +1555,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             ? h('div', { className: 'sk-hint' }, t('lib.groupsEmpty', { list: sources.groups.filter(entry => entry.items.length === 0).map(entry => `${entry.label ?? t(`lib.group.${entry.source}`)}（${entry.dir}）`).join(zhLike(ui.lang) ? '、' : ', ') })) : null,
           report.length === 0 ? null : h('ul', { className: 'sk-hint', style: { margin: 0, paddingLeft: 18 } }, report.map(line => h('li', { key: line.key, className: line.error ? 'is-error' : undefined }, line.text))),
           h('div', { className: 'sk-footer' },
-            h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote'), ' ', t('lib.defaultOn')),
+            h('div', { className: 'sk-hint' }, t(from === 'upload' ? 'upload.note' : from === 'github' ? 'github.note' : 'lib.copyNote'), zhLike(ui.lang) ? '。' : '. ', t('lib.defaultOn')),
             h('div', { className: 'sk-bar' },
               h('label', { className: 'sk-hint', htmlFor: 'sk-import-where' }, t('lib.where')),
               h(WhereSelect, { ui, roots: sources.roots, value: target, onChange: setTarget, id: 'sk-import-where' }),
@@ -1862,14 +1874,48 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           }, t(target === 'on' ? 'bulk.skillOn' : 'bulk.skillOff')))))
     }
 
-    function SkillRow({ skill, data, filter, open, onToggle, ui, autoEdit, onAutoEdited, bodyOnly }) {
+    /**
+     * One mode's column in the list: a switch, a "Manual only" or "Model only" label that opens the row (the switch
+     * cannot show those), or a dash where the mode does not have the skill.
+     */
+    function ModeCell({ ui, data, skill, mode, onOpen }) {
+      const { t } = ui
+      const current = cell(ui, data, skill, mode)
+      const name = ui.modeName(mode)
+      if (current.state === 'missing') return h('span', { className: 'sk-cell is-none', title: current.reason }, '—')
+      const choice = current.reason === undefined ? ui.choiceOf(mode, skill) : undefined
+      if (choice === 'manual' || choice === 'model') {
+        return h('span', { className: 'sk-cell' }, h('button', {
+          type: 'button', className: 'sk-cellpill', title: t(`mode.${choice}Hint`, { name: skill.name }),
+          'aria-label': t('cell.special', { mode: name, name: skill.name, state: t(`mode.${choice}`) }), onClick: onOpen,
+        }, t(`mode.${choice}`)))
+      }
+      return h('span', { className: 'sk-cell' }, h('button', {
+        type: 'button', className: 'sk-switch', role: 'switch', 'aria-checked': current.on,
+        'aria-label': t('cell.toggle', { mode: name, name: skill.name }),
+        title: current.reason ?? (current.state === 'pinned' ? t('reason.pinnedBy') : name),
+        disabled: current.reason !== undefined || ui.busy.has(`${mode.id}\0${skill.name}`),
+        onClick: () => ui.toggle(mode, skill),
+      }))
+    }
+
+    /** More modes than this are summed up as "on in n of m modes" instead of one column each. */
+    const MAX_COLUMNS = 4
+
+    /** The modes that get a column in the list: those that load skills, when there are few enough to fit. */
+    function columnModes(data) {
+      const loading = data.modes.filter(mode => mode.hasSkillTool)
+      return loading.length > 0 && loading.length <= MAX_COLUMNS ? loading : []
+    }
+
+    function SkillRow({ skill, data, filter, columns, open, onToggle, ui, autoEdit, onAutoEdited, bodyOnly }) {
       const { t } = ui
       const rowRef = React.useRef(null)
       // A skill just created opens its editor, so the row must be in view.
       React.useEffect(() => { if (autoEdit) rowRef.current?.scrollIntoView({ block: 'nearest' }) }, [autoEdit])
-      const modes = data.modes
-      const on = modes.filter(mode => cell(ui, data, skill, mode).on)
-      const chosen = filter === '' ? undefined : modes.find(mode => mode.id === filter)
+      const loading = data.modes.filter(mode => mode.hasSkillTool)
+      const on = loading.filter(mode => cell(ui, data, skill, mode).on)
+      const chosen = filter === '' ? undefined : data.modes.find(mode => mode.id === filter)
       const key = mode => `${mode.id}\0${skill.name}`
       const flip = mode => ui.toggle(mode, skill)
       let side = null
@@ -1881,10 +1927,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           title: current.reason, disabled: current.reason !== undefined || ui.busy.has(key(chosen)),
           onClick: () => flip(chosen),
         })
+      } else if (columns.length > 0) {
+        side = h('span', { className: 'sk-cells' }, columns.map(mode => h(ModeCell, { key: mode.id, ui, data, skill, mode, onOpen: () => { if (!open) onToggle() } })))
       }
       const summary = chosen === undefined
-        ? t('available', { n: on.length, total: modes.length })
-        : t(`state.${cell(ui, data, skill, chosen).state}`)
+        ? h('span', { className: `sk-meta${columns.length > 0 ? ' sk-cells-alt' : ''}`, title: on.map(mode => ui.modeName(mode)).join(ui.lang === 'zh' ? '、' : ', ') }, t('available', { n: on.length, total: loading.length }))
+        : h('span', { className: 'sk-meta' }, t(`state.${cell(ui, data, skill, chosen).state}`))
       return h('div', { ref: rowRef, className: `sk-row${open ? ' is-open' : ''}` },
         h('div', { className: 'sk-top' },
           h('button', { type: 'button', className: 'sk-head', 'aria-expanded': open, onClick: onToggle },
@@ -1900,7 +1948,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('span', { className: 'sk-desc' }, skill.description ?? ''),
             skill.tokens === undefined ? null : h('span', { className: 'sk-meta sk-narrow-hide', title: t('tok.hint') }, t('tok.skill', { n: skill.tokens })),
             usageOf(ui.usage, skill.name) === undefined ? null : h('span', { className: 'sk-meta sk-narrow-hide' }, times(t, usageOf(ui.usage, skill.name).model + usageOf(ui.usage, skill.name).user)),
-            h('span', { className: 'sk-meta' }, summary)),
+            summary),
           side),
         open ? h('div', { className: 'sk-body' },
           skill.description === undefined ? null : h('p', { className: 'sk-full' }, skill.description),
@@ -2788,11 +2836,16 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       } else if (skills.length === 0) {
         body = h('div', { className: 'sk-hint' }, chosenMode !== undefined && chosenMode.hasSkillTool === false ? t('mode.noSkills', { mode: modeName(chosenMode) }) : t('empty.filtered'))
       } else {
-        body = h('div', { className: 'sk-list' }, skills.map(skill => h(SkillRow, {
-          key: skill.name, skill, data, filter, ui, open: openNames.has(skill.name), onToggle: () => toggleOpen(skill.name),
-          bodyOnly: needle !== '' && !namesMatch(skill) && hits.has(skill.name),
-          autoEdit: editName === skill.name, onAutoEdited: () => setEditName(null),
-        })))
+        const columns = filter === '' ? columnModes(data) : []
+        body = h('div', { className: 'sk-list' },
+          columns.length === 0 ? null : h('div', { className: 'sk-colhead', 'aria-hidden': true },
+            h('span', { className: 'sk-grow' }),
+            h('span', { className: 'sk-cells' }, columns.map(mode => h('span', { key: mode.id, className: 'sk-cell', title: modeName(mode) }, modeName(mode))))),
+          skills.map(skill => h(SkillRow, {
+            key: skill.name, skill, data, filter, columns, ui, open: openNames.has(skill.name), onToggle: () => toggleOpen(skill.name),
+            bodyOnly: needle !== '' && !namesMatch(skill) && hits.has(skill.name),
+            autoEdit: editName === skill.name, onAutoEdited: () => setEditName(null),
+          })))
       }
 
       return h('div', { className: 'sk' },
