@@ -950,6 +950,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-cell.is-none { color: var(--dsw-alias-label-tertiary); }
 .sk-colhead { display: flex; align-items: flex-end; margin-bottom: -4px; padding-right: .5px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
 .sk-colhead .sk-cell { display: block; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sk-colcost { display: block; font-size: 11px; color: var(--dsw-alias-label-tertiary); }
 .sk-cellpill { flex: none; font: inherit; font-size: 11px; line-height: 18px; padding: 0 7px; border: 0; border-radius: 9px; background: var(--sk-tint); color: var(--dsw-alias-state-business-primary); white-space: nowrap; cursor: pointer; }
 .sk-cells-alt { display: none; }
 .sk-skeleton { display: flex; flex-direction: column; gap: 8px; }
@@ -2804,6 +2805,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       if (sort === 'tokens') skills.sort((a, b) => (b.tokens ?? 0) - (a.tokens ?? 0) || a.name.localeCompare(b.name))
       const chosenMode = filter === '' ? undefined : modes.find(mode => mode.id === filter)
       const costs = modes.filter(mode => mode.catalog !== undefined)
+      const columns = data !== null && filter === '' ? columnModes(data) : []
       const toggleOpen = name => setOpenNames((current) => {
         const next = new Set(current)
         if (next.has(name)) next.delete(name)
@@ -2836,11 +2838,13 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       } else if (skills.length === 0) {
         body = h('div', { className: 'sk-hint' }, chosenMode !== undefined && chosenMode.hasSkillTool === false ? t('mode.noSkills', { mode: modeName(chosenMode) }) : t('empty.filtered'))
       } else {
-        const columns = filter === '' ? columnModes(data) : []
         body = h('div', { className: 'sk-list' },
           columns.length === 0 ? null : h('div', { className: 'sk-colhead', 'aria-hidden': true },
             h('span', { className: 'sk-grow' }),
-            h('span', { className: 'sk-cells' }, columns.map(mode => h('span', { key: mode.id, className: 'sk-cell', title: modeName(mode) }, modeName(mode))))),
+            h('span', { className: 'sk-cells' }, columns.map(mode => h('span', {
+              key: mode.id, className: 'sk-cell',
+              title: mode.catalog === undefined ? modeName(mode) : `${t('tok.mode', { mode: modeName(mode), n: mode.catalog.skills, tokens: mode.catalog.tokens })}\n${t('tok.hint')}`,
+            }, modeName(mode), mode.catalog === undefined ? null : h('span', { className: 'sk-colcost' }, t('tok.skill', { n: mode.catalog.tokens })))))),
           skills.map(skill => h(SkillRow, {
             key: skill.name, skill, data, filter, columns, ui, open: openNames.has(skill.name), onToggle: () => toggleOpen(skill.name),
             bodyOnly: needle !== '' && !namesMatch(skill) && hits.has(skill.name),
@@ -2886,7 +2890,9 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             data === null || data.skills.length === 0 ? h('span', { className: 'sk-grow' }) : h('div', { className: 'sk-hint sk-grow', title: t('tok.hint') },
               chosenMode !== undefined
                 ? chosenMode.catalog === undefined ? t('count', { n: skills.length }) : t('tok.mode', { mode: modeName(chosenMode), n: chosenMode.catalog.skills, tokens: chosenMode.catalog.tokens })
-                : costs.length === 0 ? t('count', { n: skills.length }) : `${t('count', { n: skills.length })} · ${t('tok.modes', { list: costs.map(mode => t('tok.entry', { mode: modeName(mode), tokens: mode.catalog.tokens })).join(zh ? '、' : ', ') })}`),
+                : costs.length === 0 ? t('count', { n: skills.length }) : h(React.Fragment, null, t('count', { n: skills.length }),
+                  // With a column per mode, each column's heading shows its cost instead.
+                  h('span', { className: columns.length > 0 && costs.every(mode => columns.includes(mode)) ? 'sk-cells-alt' : undefined }, ` · ${t('tok.modes', { list: costs.map(mode => t('tok.entry', { mode: modeName(mode), tokens: mode.catalog.tokens })).join(zh ? '、' : ', ') })}`))),
             h('div', { className: 'sk-tools' },
               h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'project', disabled: data === null, onClick: () => setPanel(panel === 'project' ? null : 'project') }, project === '' ? t('project.button') : `${t('project.button')} ✓`),
               h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'usage', disabled: data === null, onClick: openUsage }, t('usage.button')),
