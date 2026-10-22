@@ -327,3 +327,22 @@ test('refuses a relative or missing folder for the project and for the import li
   assert.equal((await call('skillSources', { folder: join(home, 'nope') })).code, 'folder-missing')
   assert.equal((await value('skillSources', { folder: project })).groups[0].items.length, 0)
 })
+
+test('answers the update actions on its own route, also while dsh-modes is installed', async () => {
+  const realFetch = globalThis.fetch
+  const asked = []
+  globalThis.fetch = async (url) => {
+    asked.push(String(url))
+    return { ok: true, status: 200, json: async () => ({ name: 'dsh-mode-skills', version: '99.0.0', dist: { tarball: 'https://registry.npmjs.org/dsh-mode-skills/-/dsh-mode-skills-99.0.0.tgz' } }) }
+  }
+  try {
+    const { value } = await mount(() => [], { dshModes: {} })
+    const status = await value('updateStatus', { refresh: true })
+    assert.equal(status.name, 'dsh-mode-skills')
+    assert.equal(status.latest, '99.0.0')
+    assert.deepEqual(asked, ['https://registry.npmjs.org/dsh-mode-skills/latest'])
+    assert.equal((await value('upgradeStatus')).state, 'idle')
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})

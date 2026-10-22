@@ -410,6 +410,45 @@ window.__ModuleLoader__.load({
       'err.store-network': '连不上 skills.sh。需要代理时，请先设置 HTTPS_PROXY 和 NODE_USE_ENV_PROXY=1 再启动 DSH',
       'err.store-rate-limited': 'skills.sh 请求太频繁，稍等一会儿再搜',
       'err.store-failed': 'skills.sh 返回了 {status}，稍后再试',
+      'update.available': '「Skill 管理」有新版本 {latest}（当前 {version}）',
+      'update.changes': '查看更新记录',
+      'update.upgrade': '升级…',
+      'update.manualHint': '在终端运行下面的命令升级，然后重启 dsh：',
+      'update.gitHint': '你是从 GitHub 安装的。要升级，在终端运行下面的命令，然后重启 dsh：',
+      'update.confirm': '把「Skill 管理」从 {from} 升级到 {to}？DSH 会从 {host} 下载并安装。装好后，有的 DSH 版本会立即换上新版本（这个页面会关闭，重新打开即可），有的要重启 dsh 才生效。正在运行的会话不受影响，你的 Skill 和设置都会保留。',
+      'update.confirmAction': '升级',
+      'update.installing': '正在安装 {to}…（{phase}）',
+      'update.phase.installing': '下载并安装',
+      'update.phase.applying': '应用到配置',
+      'update.phase.cancelling': '正在取消',
+      'update.cancel': '取消安装',
+      'update.doneRestart': '已安装 {to}，重启 dsh 后生效。',
+      'update.doneApplied': '已升级到 {to}，刷新页面后使用新版本。',
+      'update.restartHow': '网页版：停掉 dsh web 后重新运行；桌面应用：退出后重新打开。',
+      'update.reload': '刷新页面',
+      'update.reloaded': '插件已被替换，刷新页面后使用新版本。',
+      'update.rollback': '想退回旧版本，运行：',
+      'update.failed': '升级没有完成：{error}',
+      'update.failedHint': '可以重试，或在终端手动升级：',
+      'update.retry': '重试',
+      'update.upgraded': '已升级到 {to}（之前是 {from}）',
+      'update.cancelled': '已取消，已安装的版本没有变化。',
+      'update.version': '{name} {version}',
+      'update.dev': '本地开发安装，不检查更新',
+      'update.auto': '自动检查更新',
+      'update.checkNow': '检查插件更新',
+      'update.checking': '检查中…',
+      'update.upToDate': '已是最新版本',
+      'update.checkFailed': '检查失败：{error}',
+      'update.copy': '复制',
+      'update.copied': '已复制',
+      'err.unavailable': 'DSH 的插件管理不可用',
+      'err.upgrade-running': '已经有一个升级在进行',
+      'err.not-upgradable': '这种安装方式不能在页面里升级',
+      'err.update-changed': '最新版本已变成 {latest}，请重新确认',
+      'err.up-to-date': '已经是最新版本',
+      'err.check-failed': '无法读取最新版本：{error}',
+      'err.not-running': '没有正在进行的升级',
     }
     const EN = {
       'nav': 'Skills',
@@ -806,6 +845,45 @@ window.__ModuleLoader__.load({
       'err.store-network': 'Cannot reach skills.sh. If you need a proxy, set HTTPS_PROXY and NODE_USE_ENV_PROXY=1 before starting DSH',
       'err.store-rate-limited': 'skills.sh asks to slow down; search again in a moment',
       'err.store-failed': 'skills.sh answered {status}; try again later',
+      'update.available': 'Skill Manager {latest} is available (you have {version})',
+      'update.changes': 'See what changed',
+      'update.upgrade': 'Upgrade…',
+      'update.manualHint': 'Run this command in a terminal, then restart dsh:',
+      'update.gitHint': 'You installed from GitHub. To upgrade, run this in a terminal, then restart dsh:',
+      'update.confirm': 'Upgrade Skill Manager from {from} to {to}? DSH downloads it from {host} and installs it. Some DSH versions switch to the new version at once (this page closes; open it again), others load it when you restart dsh. Running sessions are not affected, and your skills and settings stay.',
+      'update.confirmAction': 'Upgrade',
+      'update.installing': 'Installing {to}… ({phase})',
+      'update.phase.installing': 'downloading and installing',
+      'update.phase.applying': 'applying to the configuration',
+      'update.phase.cancelling': 'cancelling',
+      'update.cancel': 'Cancel install',
+      'update.doneRestart': 'Installed {to}. It loads when you restart dsh.',
+      'update.doneApplied': 'Upgraded to {to}. Reload this page to use the new version.',
+      'update.restartHow': 'Web: stop dsh web and run it again. Desktop app: quit and reopen it.',
+      'update.reload': 'Reload page',
+      'update.reloaded': 'The plugin was replaced. Reload this page to use the new version.',
+      'update.rollback': 'To go back to the old version, run:',
+      'update.failed': 'The upgrade did not complete: {error}',
+      'update.failedHint': 'You can try again, or upgrade by hand in a terminal:',
+      'update.retry': 'Try again',
+      'update.upgraded': 'Upgraded to {to} (was {from})',
+      'update.cancelled': 'Cancelled; the installed version is unchanged.',
+      'update.version': '{name} {version}',
+      'update.dev': 'Development install; updates are not checked',
+      'update.auto': 'Check for updates automatically',
+      'update.checkNow': 'Check for plugin updates',
+      'update.checking': 'Checking…',
+      'update.upToDate': 'You have the latest version',
+      'update.checkFailed': 'Check failed: {error}',
+      'update.copy': 'Copy',
+      'update.copied': 'Copied',
+      'err.unavailable': 'The DSH plugin manager is not available',
+      'err.upgrade-running': 'An upgrade is already running',
+      'err.not-upgradable': 'This kind of install cannot be upgraded from the page',
+      'err.update-changed': 'The latest version is now {latest}; confirm again',
+      'err.up-to-date': 'This is already the latest version',
+      'err.check-failed': 'Could not read the latest version: {error}',
+      'err.not-running': 'No upgrade is running',
     }
 
     const CSS = `
@@ -913,6 +991,15 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-entry { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: var(--sk-r-sm); border: .5px solid var(--dsw-alias-border-l3); }
 @keyframes sk-pulse { from { opacity: .45 } to { opacity: .9 } }
 @media (prefers-reduced-motion: reduce) { .sk-skeleton span { animation: none; } .sk-caret, .sk-switch, .sk-switch::after { transition: none; } }
+.sk-update { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: var(--sk-r-md); background: var(--dsw-alias-state-business-tertiary, var(--sk-tint)); }
+.sk-update.is-bad { background: color-mix(in srgb, var(--dsw-alias-state-error-primary, #d93025) 10%, transparent); }
+.sk-update .sk-btn:not(.sk-primary) { background: var(--dsw-alias-bg-layer-1); }
+.sk-update .sk-link { align-self: center; text-decoration: none; }
+.sk-cmd { display: flex; gap: 8px; align-items: center; }
+.sk-cmd code { flex: 1 1 auto; min-width: 0; padding: 5px 10px; border-radius: var(--sk-r-sm); background: var(--dsw-alias-bg-layer-1); font-family: var(--dsw-font-mono, ui-monospace, monospace); font-size: 12px; overflow-wrap: anywhere; }
+.sk-footer-update { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding-top: 10px; border-top: .5px solid var(--dsw-alias-border-l2, var(--dsw-alias-border-l3)); font-size: 12px; color: var(--dsw-alias-label-tertiary); }
+.sk-footer-update label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.sk-footer-update input { margin: 0; }
 @media (hover: hover) { .sk-head:hover, .sk-btn:hover:not(:disabled), button.sk-chip:hover:not(:disabled), .sk-seg button:hover, .sk-grouphead:hover { background: var(--dsw-alias-interactive-bg-hover-accent, var(--sk-tint)); } .sk-primary:hover:not(:disabled) { background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill)); } .sk-link:hover { text-decoration: underline; } }
 @container (max-width: 560px) { .sk-desc, .sk-narrow-hide { display: none; } .sk-actions { width: 100%; } .sk-head .sk-name { flex: 0 1 auto; } }
 `
@@ -2073,6 +2160,162 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       }
     }
 
+    /**
+     * This plugin's own update state: the version check, and an upgrade that is running or finished. The upgrade runs
+     * on the Host; while it runs this polls it once a second, and a Host that replaced the plugin meanwhile reads as
+     * `reloaded`. These actions always go to this plugin's own route, also while dsh-modes owns the library.
+     * @param {(error: Error) => string} describe - words a failed action for the page.
+     */
+    function useUpdate(describe) {
+      const [info, setInfo] = React.useState(null)
+      const [checking, setChecking] = React.useState(false)
+      const [progress, setProgress] = React.useState(null)
+      const [problem, setProblem] = React.useState(null)
+      const load = (refresh) => {
+        setChecking(refresh)
+        return post(ROUTE, 'updateStatus', { refresh }).then((value) => {
+          setInfo(value)
+          setProgress(previous => (previous !== null && previous.state !== 'idle' ? previous : value.upgrade.state === 'idle' ? null : value.upgrade))
+          return value
+        }, () => undefined).finally(() => setChecking(false))
+      }
+      React.useEffect(() => { void load(false) }, [])
+      const running = progress?.state === 'installing'
+      React.useEffect(() => {
+        if (!running) return undefined
+        let failures = 0
+        const replaced = () => {
+          setProgress(previous => ({ ...previous, state: 'reloaded' }))
+          void load(false)
+        }
+        const timer = setInterval(() => {
+          post(ROUTE, 'upgradeStatus', {}).then((status) => {
+            failures = 0
+            if (status.state === 'idle') replaced()
+            else setProgress(status)
+          }, () => {
+            // The Host answers nothing or does not know the action: the installer replaced this plugin while it ran.
+            failures += 1
+            if (failures >= 5) replaced()
+          })
+        }, 1000)
+        return () => clearInterval(timer)
+      }, [running])
+      return {
+        info, checking, progress, problem,
+        check: () => load(true),
+        dismiss: () => { setProgress(null); setProblem(null) },
+        setCheck: (enabled) => {
+          // The box follows the click at once; a failed save puts it back.
+          setInfo(previous => (previous === null ? previous : { ...previous, checkUpdates: enabled }))
+          return post(ROUTE, 'setUpdateCheck', { enabled }).then(setInfo, (error) => {
+            setInfo(previous => (previous === null ? previous : { ...previous, checkUpdates: !enabled }))
+            setProblem(describe(error))
+          })
+        },
+        start: (version) => {
+          setProblem(null)
+          return post(ROUTE, 'upgrade', { version }).then(setProgress, error => setProblem(describe(error)))
+        },
+        dismissUpgraded: () => post(ROUTE, 'dismissUpgraded', {}).then(setInfo, error => setProblem(describe(error))),
+        cancel: () => post(ROUTE, 'cancelUpgrade', {}).then(undefined, error => setProblem(describe(error))),
+      }
+    }
+
+    /** A shell command with a button that copies it. */
+    function Command({ ui, text }) {
+      const [copied, setCopied] = React.useState(false)
+      React.useEffect(() => {
+        if (!copied) return undefined
+        const timer = setTimeout(() => setCopied(false), 1500)
+        return () => clearTimeout(timer)
+      }, [copied])
+      return h('div', { className: 'sk-cmd' },
+        h('code', null, text),
+        h('button', { type: 'button', className: 'sk-btn', onClick: () => { navigator.clipboard?.writeText(text).then(() => setCopied(true), () => undefined) } }, ui.t(copied ? 'update.copied' : 'update.copy')))
+    }
+
+    /** The banner for a newer release, and for an upgrade that is running, finished, failed, or cancelled. */
+    function UpdateBanner({ ui, update }) {
+      const { t } = ui
+      const { info, progress, problem } = update
+      const [confirming, setConfirming] = React.useState(false)
+      if (info === null) return null
+      const failure = progress?.failure
+      const reason = failure === undefined ? '' : failure.message ?? failure.code ?? failure.kind ?? 'unknown'
+      const problemLine = problem === null ? null : h('div', { className: 'sk-hint is-error', role: 'alert' }, problem)
+      if (progress?.state === 'installing') {
+        const phaseKey = `update.phase.${progress.phase}`
+        return h('div', { className: 'sk-update', role: 'status' },
+          h('div', { className: 'sk-bar' },
+            h('span', { className: 'sk-grow' }, t('update.installing', { to: progress.to, phase: t(phaseKey) === phaseKey ? progress.phase : t(phaseKey) })),
+            h('button', { type: 'button', className: 'sk-btn', disabled: progress.phase === 'cancelling', onClick: update.cancel }, t('update.cancel'))),
+          problemLine)
+      }
+      if (progress?.state === 'done' || progress?.state === 'reloaded') {
+        return h('div', { className: 'sk-update', role: 'status' },
+          h('strong', null, `✓ ${progress.state === 'reloaded' ? t('update.reloaded') : t(progress.restartRequired ? 'update.doneRestart' : 'update.doneApplied', { to: progress.to })}`),
+          progress.state === 'done' && progress.restartRequired ? h('div', { className: 'sk-hint' }, t('update.restartHow')) : null,
+          h('div', { className: 'sk-hint' }, t('update.rollback')),
+          h(Command, { ui, text: info.commands.rollback }),
+          h('div', { className: 'sk-bar sk-end' },
+            progress.restartRequired === true ? null : h('button', { type: 'button', className: 'sk-btn sk-primary', onClick: () => window.location.reload() }, t('update.reload')),
+            h('button', { type: 'button', className: 'sk-btn', onClick: update.dismiss }, t('dismiss'))))
+      }
+      if (progress?.state === 'failed') {
+        return h('div', { className: 'sk-update is-bad', role: 'alert' },
+          h('strong', null, t('update.failed', { error: reason })),
+          failure?.output === undefined ? null : h('pre', { className: 'sk-pre' }, failure.output),
+          h('div', { className: 'sk-hint' }, t('update.failedHint')),
+          h(Command, { ui, text: info.commands.upgrade }),
+          h('div', { className: 'sk-bar sk-end' },
+            info.canUpgrade ? h('button', { type: 'button', className: 'sk-btn', onClick: () => { update.dismiss(); setConfirming(true) } }, t('update.retry')) : null,
+            h('button', { type: 'button', className: 'sk-btn', onClick: update.dismiss }, t('dismiss'))))
+      }
+      if (progress?.state === 'cancelled') {
+        return h('div', { className: 'sk-update', role: 'status' },
+          h('div', { className: 'sk-bar' },
+            h('span', { className: 'sk-grow' }, t('update.cancelled')),
+            h('button', { type: 'button', className: 'sk-btn', onClick: update.dismiss }, t('dismiss'))))
+      }
+      if (progress === null && info.upgraded !== undefined) {
+        return h('div', { className: 'sk-update', role: 'status' },
+          h('div', { className: 'sk-bar' },
+            h('strong', { className: 'sk-grow' }, `✓ ${t('update.upgraded', { to: info.upgraded.to, from: info.upgraded.from })}`),
+            h('a', { className: 'sk-link', href: info.changesUrl, target: '_blank', rel: 'noreferrer' }, t('update.changes')),
+            h('button', { type: 'button', className: 'sk-btn', onClick: update.dismissUpgraded }, t('dismiss'))),
+          problemLine)
+      }
+      if (!info.newer) return problem === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, problem)
+      const manual = !info.canUpgrade && info.source !== 'link'
+      const title = t('update.available', { latest: info.latest, version: info.version })
+      return h('section', { className: 'sk-update', 'aria-label': title },
+        h('div', { className: 'sk-bar' },
+          h('strong', { className: 'sk-grow' }, title),
+          h('a', { className: 'sk-link', href: info.changesUrl, target: '_blank', rel: 'noreferrer' }, t('update.changes')),
+          info.canUpgrade ? h('button', { type: 'button', className: 'sk-btn sk-primary', disabled: confirming, onClick: () => setConfirming(true) }, t('update.upgrade')) : null),
+        manual ? h('div', { className: 'sk-hint' }, t(info.source === 'git' ? 'update.gitHint' : 'update.manualHint')) : null,
+        manual ? h(Command, { ui, text: info.source === 'git' ? info.commands.git : info.commands.upgrade }) : null,
+        problemLine,
+        confirming ? h(ConfirmBox, { ui, text: t('update.confirm', { from: info.version, to: info.latest, host: info.host }), action: t('update.confirmAction'), onCancel: () => setConfirming(false), onConfirm: () => { setConfirming(false); void update.start(info.latest) } }) : null)
+    }
+
+    /** The installed version, a manual check, and the switch for the automatic check. */
+    function UpdateFooter({ ui, update }) {
+      const { t } = ui
+      const { info, checking } = update
+      if (info === null) return null
+      const outcome = info.error !== undefined ? t('update.checkFailed', { error: info.error }) : info.checkedAt !== undefined && info.latest !== undefined && !info.newer ? t('update.upToDate') : undefined
+      return h('footer', { className: 'sk-footer-update' },
+        h('span', null, t('update.version', { name: info.name, version: info.version })),
+        info.source === 'link' ? h('span', null, t('update.dev')) : [
+          h('button', { key: 'check', type: 'button', className: 'sk-link', disabled: checking, onClick: update.check }, checking ? t('update.checking') : t('update.checkNow')),
+          h('label', { key: 'auto' },
+            h('input', { type: 'checkbox', checked: info.checkUpdates, onChange: event => update.setCheck(event.target.checked) }), t('update.auto')),
+          outcome === undefined ? null : h('span', { key: 'outcome', className: info.error === undefined ? '' : 'sk-error' }, outcome),
+        ])
+    }
+
     function Page({ ctx, t }) {
       React.useSyncExternalStore(listener => ctx.locale.subscribe(listener), () => ctx.locale.getSnapshot())
       const [data, setData] = React.useState(null)
@@ -2238,6 +2481,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         return text === key ? fallback : text
       }
       const describe = error => (error instanceof ActionFailure ? describeCode(error.code, error.details, error.message) : error.message)
+      const update = useUpdate(describe)
       const show = (next) => {
         clearTimeout(noticeTimer.current)
         setNotice(next)
@@ -2562,6 +2806,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
               h('button', { type: 'button', className: 'sk-btn sk-primary', 'aria-expanded': panel === 'create', disabled: data === null || libBusy, onClick: () => setPanel(panel === 'create' ? null : 'create') }, t('lib.create')),
               h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'store', disabled: data === null, onClick: () => setPanel(panel === 'store' ? null : 'store') }, t('store.button')),
               h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': panel === 'import', disabled: data === null || (libBusy && panel !== 'import'), onClick: () => { setImportStart(undefined); setPanel(panel === 'import' ? null : 'import') } }, t('lib.import')))),
+          h(UpdateBanner, { ui, update }),
           data?.manager === 'dsh-modes' ? h('div', { className: 'sk-note' }, t('managedByModes')) : null,
           dormantOff + dormantOther > 0 ? h('div', { className: 'sk-note' },
             h('div', { className: 'sk-grow' },
@@ -2625,7 +2870,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             ui, text: t('bulk.listConfirm', { mode: modeName(chosenMode), n: settableHere.filter(skill => ui.choiceOf(chosenMode, skill) !== 'off').length }), action: t('bulk.listOff'), danger: true, busy: busy.has('bulk'),
             onCancel: () => setBulk(null), onConfirm: () => bulkList('off'),
           }) : null,
-          body))
+          body,
+          h(UpdateFooter, { ui, update })))
     }
 
     return {

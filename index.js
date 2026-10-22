@@ -22,6 +22,9 @@
  * The recycle bin (trash.js), the check for skill files DSH skips (diagnose.js), uploads (zip.js), and the folders of
  * other agent tools work the same with or without dsh-modes, which has none of them. `list` also estimates what each
  * skill and each mode's whole catalog cost the model (tokens.js).
+ *
+ * The update actions check for a newer release of this plugin and install it with DSH's plugin manager
+ * (self-update.js); they keep their switch in `<profile>/.dsh-mode-skills/settings.json`.
  */
 import { randomBytes } from 'node:crypto'
 import { lstat, mkdir, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
@@ -34,6 +37,7 @@ import { SkillFileError, VERSION_MAX_BYTES, VERSION_MAX_FILES, readVersionMeta, 
 import { DESCRIPTION_MAX_CHARS, agentRoots, copySkill, displayPath, expandHome, findPluginSkills, fingerprint, hasSkillFile, importRoots, listSkillDirs, newSkillText, readCandidate, replaceSkill, scriptFiles, skillFiles, skillRoots, sourceState } from './skill-import.js'
 import { NOTE_MAX_CHARS, SKILL_NAME, VERSION_ID, isEditableSkill, nextVersionId, parseSkillFile, plainLines, withLineEndingsOf, withoutVersion } from './skill-store.js'
 import { POLICY_PROVIDERS, remembered, summarize } from './skill-view.js'
+import { selfUpdateActions } from './self-update.js'
 import { searchStore, storeIndex } from './store.js'
 import { StateFileError, StateStore } from './state.js'
 import { catalogTokens, skillTokens } from './tokens.js'
@@ -86,7 +90,9 @@ class ActionError extends Error {
 }
 
 export function apply(ctx) {
-  const m = { ctx, scans: new Map(), usageCache: new Map(), storeCache: new Map(), store: new StateStore(join(dirname(ctx.configEditor.documentPath), STATE_DIR)), watchers: new Set() }
+  const stateDir = join(dirname(ctx.configEditor.documentPath), STATE_DIR)
+  const updates = selfUpdateActions({ ctx, stateDir, refuse: (code, text, details) => new ActionError(code, text, details) })
+  const m = { ctx, scans: new Map(), usageCache: new Map(), storeCache: new Map(), store: new StateStore(stateDir), watchers: new Set(), updates }
   ctx.provide('dshModeSkills', {
     /** The skills a mode turns off, and those it leaves to the user with each one's file and summary. */
     policyFor: preset => policyFor(m, preset),
@@ -156,6 +162,15 @@ const ACTIONS = {
   usage: (m, body) => usageOf(m, body),
   storeSearch: (m, body) => storeSearch(m, body),
   storeIndex: async () => ({ repos: await storeIndex() }),
+  /** This plugin's version and the latest release; `refresh` checks now (self-update.js). */
+  updateStatus: (m, body) => m.updates.updateStatus(body),
+  setUpdateCheck: (m, body) => m.updates.setUpdateCheck(body),
+  /** Forget the note that an upgrade from this page finished, once the page has shown it. */
+  dismissUpgraded: m => m.updates.dismissUpgraded(),
+  /** Install the latest release with DSH's plugin manager; answers at once, and `upgradeStatus` follows it. */
+  upgrade: (m, body) => m.updates.upgrade(body),
+  upgradeStatus: m => m.updates.upgradeStatus(),
+  cancelUpgrade: m => m.updates.cancelUpgrade(),
 }
 
 function reply(body) {
