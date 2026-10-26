@@ -26,6 +26,7 @@ A skill manager plugin for DeepSeek Harness (dsh). It adds a **Skills** entry to
 - **Version history**: save versions by hand (with an optional note), view, restore to the file (the current file is saved first), or delete them; a deleted version's number is not reused.
 - **Update the plugin itself**: the page tells you when a newer version of this plugin is out and installs it with DSH's own installer after you confirm; see **Updates** below.
 - **Modes keep working after an uninstall**: see **Uninstall** below.
+- **When the page fails**: if the page itself fails to draw, it shows the error and **Reload** instead of an empty panel.
 - **With Mode Manager**: when [dsh-modes](https://github.com/xiaohai-78/dsh-modes) is installed, it owns the per-mode settings, creating, importing, and versions; actions here are saved through it, the same settings, import records, and versions as its Skills tab, and skills it pinned to a saved version are marked. Manual and Model, which Mode Manager does not have, are unavailable then. A setting that only this plugin had saved earlier stays unused; **Hand over to Mode Manager** moves the Off ones across. The trash, the skipped-file check, token costs, uploads, GitHub installs, display names and tags, the project folder, the file editor, and other agent folders work as usual.
 
 The list holds the skills each mode sees: user folders, custom folders, skills bundled with a mode, and, with a project folder chosen, that project's.
