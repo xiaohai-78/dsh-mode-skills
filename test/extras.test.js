@@ -169,6 +169,19 @@ test('installs skills from a GitHub address, then finds and applies a newer vers
     assert.deepEqual(requested, ['https://codeload.github.com/o/skills/zip/HEAD'])
     assert.deepEqual([staged.label, staged.github.commit, staged.truncated], ['o/skills', 'a'.repeat(40), false])
     assert.deepEqual(staged.items.map(item => [item.name, item.status, item.display, item.scripts]), [['pdf', 'new', 'o/skills/skills/pdf', ['scripts/run.py']], ['xlsx', 'new', 'o/skills/skills/xlsx', []]])
+    const picks = {}
+    for (const url of ['o/skills', 'https://github.com/o/skills/tree/main/skills/pdf', 'https://github.com/o/skills/blob/main/skills/xlsx/SKILL.md', 'https://github.com/o/skills/tree/main/skills', 'https://skills.sh/o/skills/xlsx', 'npx skills add o/skills --skill pdf']) {
+      const read = await value('githubSources', { url })
+      picks[url] = [read.items.length, read.pick]
+    }
+    assert.deepEqual(picks, {
+      'o/skills': [2, undefined],
+      'https://github.com/o/skills/tree/main/skills/pdf': [1, 'pdf'],
+      'https://github.com/o/skills/blob/main/skills/xlsx/SKILL.md': [1, 'xlsx'],
+      'https://github.com/o/skills/tree/main/skills': [2, undefined],
+      'https://skills.sh/o/skills/xlsx': [2, 'xlsx'],
+      'npx skills add o/skills --skill pdf': [2, 'pdf'],
+    })
     const { results } = await value('importUploads', { upload: staged.upload, items: staged.items.map(item => ({ path: item.path })) })
     assert.deepEqual(results.map(result => [result.name, result.status]), [['pdf', 'imported'], ['xlsx', 'imported']])
     assert.match(await readFile(join(skillsDir, 'pdf', 'scripts', 'run.py'), 'utf8'), /print\(1\)/)
@@ -201,7 +214,9 @@ test('installs skills from a GitHub address, then finds and applies a newer vers
 
     globalThis.fetch = async () => new Response('', { status: 404 })
     assert.equal((await call('githubSources', { url: 'o/missing' })).code, 'github-not-found')
-    assert.equal((await call('githubSources', { url: 'https://example.com/a/b' })).code, 'github-url-invalid')
+    const elsewhere = await call('githubSources', { url: 'https://example.com/a/b' })
+    assert.deepEqual([elsewhere.code, elsewhere.details], ['github-only', { host: 'example.com' }])
+    assert.equal((await call('githubSources', { url: 'not an address' })).code, 'github-url-invalid')
     assert.deepEqual((await value('checkUpdates')).failed.map(failure => [failure.repo, failure.code]), [['o/skills', 'github-not-found']])
   } finally {
     globalThis.fetch = original

@@ -22,60 +22,109 @@ function refuse(code, message, details) {
   return new SkillFileError(code, message, details)
 }
 
+/** The start of a `skills` CLI install command, as skills.sh shows it: `npx skills add <source> [--skill <name>]`. */
+const SKILLS_COMMAND = /^(?:npx|bunx|pnpx|pnpm\s+dlx|yarn\s+dlx)\s+(?:(?:-y|--yes)\s+)?skills(?:@\S+)?\s+add\s+/i
+/** A skill name as the `skills` CLI and skills.sh write it. */
+const SKILL_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+
+/** The source and the skill a `skills add` command names; any other text is the source itself. */
+function fromCommand(text) {
+  const match = SKILLS_COMMAND.exec(text)
+  if (match === null) return { address: text }
+  const words = text.slice(match[0].length).trim().split(/\s+/).map(word => word.replace(/^['"]|['"]$/g, ''))
+  let address = ''
+  let skill
+  for (let at = 0; at < words.length; at++) {
+    const word = words[at]
+    if (word === '--skill' || word === '-s') skill = words[++at]
+    else if (word.startsWith('--skill=')) skill = word.slice('--skill='.length)
+    else if (!word.startsWith('-') && address === '') address = word
+  }
+  return { address, ...skill !== undefined && SKILL_NAME.test(skill) ? { skill } : {} }
+}
+
+/** The ways to read a ref and folder from path segments that start with the ref; a branch name may contain `/`. */
+function refTries(rest) {
+  const tries = []
+  for (let at = 1; at <= Math.min(4, rest.length); at++) tries.push({ ref: rest.slice(0, at).join('/'), path: folderOf(rest.slice(at)) })
+  return tries
+}
+
 /**
  * Read an address the user pasted.
- * @param {string} input - a GitHub URL (`https://github.com/owner/repo`, with `/tree/<ref>/<folder>` for a branch and
- *   folder), `github.com/owner/repo`, `git@github.com:owner/repo.git`, or `owner/repo` with an optional `#ref` or
- *   `/folder`.
- * @returns {{ owner: string, repo: string, tries: { ref: string, path: string }[] }} the repository, and the ways to
- *   read its ref from the address, most likely first: a branch name may contain `/`, so `/tree/a/b/c` is `a` with
- *   folder `b/c`, or `a/b` with folder `c`, and so on. A ref of `HEAD` is the default branch.
- * @throws {SkillFileError} `github-url-invalid` when the address names no repository.
+ * @param {string} input - a GitHub URL (`https://github.com/owner/repo`, with `/tree/<ref>/<folder>` or
+ *   `/blob/<ref>/<folder>/SKILL.md` for a branch and folder), `github.com/owner/repo`, `git@github.com:owner/repo.git`,
+ *   `ssh://git@github.com/owner/repo.git`, a `git+` form of these, a raw file link
+ *   (`https://raw.githubusercontent.com/owner/repo/<ref>/<folder>/SKILL.md`), a skills.sh page
+ *   (`https://skills.sh/owner/repo/<skill>`), a `skills` CLI command (`npx skills add owner/repo --skill <skill>`), or
+ *   `owner/repo` with an optional `#ref` or `/folder`.
+ * @returns {{ owner: string, repo: string, tries: { ref: string, path: string }[], skill?: string }} the repository,
+ *   the ways to read its ref from the address, most likely first (`/tree/a/b/c` is `a` with folder `b/c`, or `a/b` with
+ *   folder `c`, and so on; `HEAD` is the default branch), and the skill a skills.sh page or command names.
+ * @throws {SkillFileError} `github-only` (with `host`) for an address on another host, and `github-url-invalid` when the
+ *   address names no repository.
  */
 export function parseGithub(input) {
   const invalid = () => refuse('github-url-invalid', `Not a GitHub repository address: ${String(input).slice(0, 200)}`)
-  const text = String(input ?? '').trim()
+  const elsewhere = host => refuse('github-only', `Only GitHub repositories can be read, not ${host}`, { host })
+  const { address, skill } = fromCommand(String(input ?? '').trim())
+  const text = address.replace(/^git\+/i, '')
   if (text === '') throw invalid()
-  const ssh = /^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/i.exec(text)
-  let segments
-  let hashRef
-  if (ssh !== null) {
-    segments = [ssh[1], ssh[2]]
-  } else if (/^https?:\/\//i.test(text) || /^(?:www\.)?github\.com\//i.test(text)) {
+  /** The repository and what follows it, checked; owners and repositories are names GitHub allows. */
+  const repository = (segments) => {
+    if (segments.length < 2) throw invalid()
+    const owner = segments[0]
+    const repo = segments[1].replace(/\.git$/i, '')
+    if (!NAME.test(owner) || !NAME.test(repo) || repo === '.' || repo === '..') throw invalid()
+    const tail = segments.slice(2)
+    if (tail.some(part => part === '..' || part === '.')) throw invalid()
+    return { owner, repo, tail }
+  }
+  const withSkill = parsed => (skill === undefined ? parsed : { ...parsed, skill })
+  const scp = /^[\w.-]+@([^:/]+):(.+)$/.exec(text)
+  if (scp !== null) {
+    if (scp[1].toLowerCase() !== 'github.com') throw elsewhere(scp[1])
+    const { owner, repo, tail } = repository(scp[2].split('/').filter(Boolean))
+    if (tail.length > 0) throw invalid()
+    return withSkill({ owner, repo, tries: [{ ref: 'HEAD', path: '' }] })
+  }
+  const schemed = /^(?:https?|ssh):\/\//i.test(text)
+  const first = text.split(/[/#]/)[0]
+  if (schemed || first.includes('.')) {
     let url
     try {
-      url = new URL(/^https?:/i.test(text) ? text : `https://${text}`)
+      url = new URL(schemed ? text : `https://${text}`)
     } catch {
       // A malformed address names no repository.
       throw invalid()
     }
-    if (!['github.com', 'www.github.com'].includes(url.hostname.toLowerCase())) throw invalid()
+    let segments
     try {
       segments = url.pathname.split('/').filter(Boolean).map(decodeURIComponent)
     } catch {
       // An escape that does not decode cannot name a repository.
       throw invalid()
     }
-  } else {
-    const [path, hash] = text.split('#')
-    segments = path.split('/').filter(Boolean)
-    hashRef = hash === undefined || hash === '' ? undefined : hash
-  }
-  if (segments.length < 2) throw invalid()
-  const owner = segments[0]
-  const repo = segments[1].replace(/\.git$/i, '')
-  if (!NAME.test(owner) || !NAME.test(repo) || repo === '.' || repo === '..') throw invalid()
-  const tail = segments.slice(2)
-  if (tail.some(part => part === '..' || part === '.')) throw invalid()
-  if (/^https?:/i.test(text) || /^(?:www\.)?github\.com\//i.test(text)) {
-    if (tail.length === 0) return { owner, repo, tries: [{ ref: 'HEAD', path: '' }] }
+    const host = url.hostname.toLowerCase().replace(/^www\./, '')
+    if (host === 'skills.sh') {
+      const { owner, repo, tail } = repository(segments)
+      const named = tail.length === 1 && SKILL_NAME.test(tail[0]) ? tail[0] : skill
+      return { owner, repo, tries: [{ ref: 'HEAD', path: '' }], ...named === undefined ? {} : { skill: named } }
+    }
+    if (host === 'raw.githubusercontent.com') {
+      const { owner, repo, tail } = repository(segments)
+      if (tail.length === 0) throw invalid()
+      return withSkill({ owner, repo, tries: refTries(tail) })
+    }
+    if (host !== 'github.com') throw elsewhere(url.hostname)
+    const { owner, repo, tail } = repository(segments)
+    if (tail.length === 0) return withSkill({ owner, repo, tries: [{ ref: 'HEAD', path: '' }] })
     if ((tail[0] !== 'tree' && tail[0] !== 'blob') || tail.length < 2) throw invalid()
-    const rest = tail.slice(1)
-    const tries = []
-    for (let at = 1; at <= Math.min(4, rest.length); at++) tries.push({ ref: rest.slice(0, at).join('/'), path: folderOf(rest.slice(at)) })
-    return { owner, repo, tries }
+    return withSkill({ owner, repo, tries: refTries(tail.slice(1)) })
   }
-  return { owner, repo, tries: [{ ref: hashRef ?? 'HEAD', path: folderOf(tail) }] }
+  const [path, hash] = text.split('#')
+  const { owner, repo, tail } = repository(path.split('/').filter(Boolean))
+  return withSkill({ owner, repo, tries: [{ ref: hash === undefined || hash === '' ? 'HEAD' : hash, path: folderOf(tail) }] })
 }
 
 /** The folder an address names: a link to a `SKILL.md` stands for its folder. */

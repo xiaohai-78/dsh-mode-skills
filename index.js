@@ -1385,9 +1385,10 @@ function repoDir(root, path) {
 /**
  * Download a GitHub repository and list its skills for installing.
  * @param {{ url?: unknown }} body - an address `github.js` reads: a repository, or a branch and folder in one.
- * @returns {Promise<{ upload: string, label: string, github: object, truncated: boolean, items: object[] }>} the staged
- *   upload (import it with `importUploads`), the repository, and the candidates, each with `github` (its repository,
- *   ref, folder, and commit) and `scripts` (files that can run).
+ * @returns {Promise<{ upload: string, label: string, github: object, truncated: boolean, items: object[], pick?: string }>}
+ *   the staged upload (import it with `importUploads`), the repository, the candidates, each with `github` (its
+ *   repository, ref, folder, and commit) and `scripts` (files that can run), and the skill the address named (a
+ *   skills.sh page, a `skills add --skill` command, or a link to one skill's folder), for the page to select.
  */
 async function githubSources(m, body) {
   const parsed = parseGithub(body.url)
@@ -1398,9 +1399,11 @@ async function githubSources(m, body) {
   await mkdir(root, { recursive: true })
   const { dirs, truncated, commit } = await unpackRepo(buffer, under, root)
   const repo = `${parsed.owner}/${parsed.repo}`
+  const pick = parsed.skill ?? (under !== '' && dirs.length === 1 && dirs[0] === under ? under.split('/').at(-1) : undefined)
+  const named = pick === undefined ? {} : { pick }
   if (dirs.length === 0) {
     await rm(join(uploadsDir(m), upload), { recursive: true, force: true })
-    return { upload, label: repo, github: { kind: 'github', repo, ref, ...commit === undefined ? {} : { commit } }, truncated, items: [] }
+    return { upload, label: repo, github: { kind: 'github', repo, ref, ...commit === undefined ? {} : { commit } }, truncated, items: [], ...named }
   }
   const origin = { kind: 'github', repo, ref, ...commit === undefined ? {} : { commit } }
   await writeFile(join(uploadsDir(m), upload, 'origin.json'), JSON.stringify(origin))
@@ -1411,7 +1414,7 @@ async function githubSources(m, body) {
     const item = await candidateFor(state, path, 'github', { repo, path: dir })
     items.push({ ...item, display: dir === '' ? repo : `${repo}/${dir}`, github: { repo, ref, path: dir, ...commit === undefined ? {} : { commit } }, scripts: await scriptFiles(path) })
   }
-  return { upload, label: repo, github: origin, truncated, items }
+  return { upload, label: repo, github: origin, truncated, items, ...named }
 }
 
 /** The names of the skills installed from GitHub whose files are still there; a skill in the trash is left alone. */

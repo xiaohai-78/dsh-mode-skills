@@ -301,7 +301,7 @@ window.__ModuleLoader__.load({
       'files.single': '这个 Skill 是单个 .md 文件，没有其他文件',
       'files.skippedLinks': '{n} 个链接没有列出',
       'lib.importFrom.github': 'GitHub',
-      'github.placeholder': '粘贴 GitHub 地址，例如 github.com/anthropics/skills',
+      'github.placeholder': '粘贴 GitHub 地址、skills.sh 链接或 npx skills add 命令，例如 github.com/anthropics/skills',
       'github.read': '读取',
       'github.reading': '正在从 GitHub 下载…',
       'github.note': '来源会被记住，之后可以检查并一键更新；只支持公开仓库',
@@ -327,6 +327,7 @@ window.__ModuleLoader__.load({
       'handoff.leftover': '另有 {n} 项「仅手动 / 仅模型」模式管理不支持，仍留在 Skill 管理里',
       'handoff.done': '已把 {n} 项「关闭」交给模式管理',
       'err.github-url-invalid': '这不是 GitHub 仓库地址',
+      'err.github-only': '目前只能从 GitHub 安装，{host} 上的仓库读不了',
       'err.github-not-found': '找不到公开的仓库或分支：{repo}（私有仓库不支持）',
       'err.github-failed': 'GitHub 返回了 {status}',
       'err.github-network': '连不上 GitHub。需要代理时，请先设置 HTTPS_PROXY 和 NODE_USE_ENV_PROXY=1 再启动 DSH',
@@ -398,7 +399,9 @@ window.__ModuleLoader__.load({
       'lib.filterCount': '显示 {shown}/{total}',
       'store.button': 'Skill 商城',
       'store.title': 'Skill 商城',
-      'store.placeholder': '搜索 Skill，例如 pdf、code review、数据库',
+      'store.placeholder': '搜索 Skill，或粘贴 GitHub / skills.sh 链接',
+      'store.open': '打开',
+      'store.addressHint': '这是一个链接：按回车或点「打开」，读取这个仓库并列出里面的 Skill，勾选后再安装。支持 GitHub 地址（也可以指向某个目录或 SKILL.md）、skills.sh 页面和 npx skills add 命令',
       'store.search': '搜索',
       'store.hint': '搜索来自 skills.sh（公开的 Skill 目录，数字是它统计的安装次数），搜索词会发给它。点「查看并安装」会先读取仓库、让你在导入页里勾选，不会直接安装',
       'store.recommended': '推荐的仓库',
@@ -741,7 +744,7 @@ window.__ModuleLoader__.load({
       'files.single': 'This skill is a single .md file with no other files',
       'files.skippedLinks': '{n} links are not listed',
       'lib.importFrom.github': 'GitHub',
-      'github.placeholder': 'Paste a GitHub address, e.g. github.com/anthropics/skills',
+      'github.placeholder': 'Paste a GitHub address, a skills.sh link, or an npx skills add command, e.g. github.com/anthropics/skills',
       'github.read': 'Read',
       'github.reading': 'Downloading from GitHub…',
       'github.note': 'The source is remembered, so you can check for updates and apply them in one click; public repositories only',
@@ -767,6 +770,7 @@ window.__ModuleLoader__.load({
       'handoff.leftover': '{n} Manual / Model-only settings are not supported by Mode Manager and stay in Skill Manager',
       'handoff.done': 'Handed {n} Off settings over to Mode Manager',
       'err.github-url-invalid': 'This is not a GitHub repository address',
+      'err.github-only': 'Only GitHub repositories can be installed; {host} is not supported',
       'err.github-not-found': 'No public repository or branch found: {repo} (private repositories are not supported)',
       'err.github-failed': 'GitHub answered {status}',
       'err.github-network': 'Cannot reach GitHub. If you need a proxy, set HTTPS_PROXY and NODE_USE_ENV_PROXY=1 before starting DSH',
@@ -838,7 +842,9 @@ window.__ModuleLoader__.load({
       'lib.filterCount': 'Showing {shown} of {total}',
       'store.button': 'Skill store',
       'store.title': 'Skill store',
-      'store.placeholder': 'Search skills, e.g. pdf, code review, database',
+      'store.placeholder': 'Search skills, or paste a GitHub or skills.sh link',
+      'store.open': 'Open',
+      'store.addressHint': 'This is a link: press Enter or Open to read the repository and list its skills, then choose which to install. GitHub addresses (also to a folder or a SKILL.md), skills.sh pages, and npx skills add commands work',
       'store.search': 'Search',
       'store.hint': 'Search is served by skills.sh, a public skill directory (the number is its install count); your search text is sent to it. View and install reads the repository and lets you choose in the import page; nothing is installed right away',
       'store.recommended': 'Recommended repositories',
@@ -1249,6 +1255,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
     }
 
     /** The skill store: search skills.sh or browse recommended repositories, then read one in the import page. */
+    /**
+     * Search-box text that is an address to open rather than words to search for: a link, a git address, a `skills add`
+     * command, or `owner/repo`. The Host reads it (github.js) and says when it names no GitHub repository.
+     */
+    const ADDRESS = /^(?:(?:https?|ssh):\/\/|git@|git\+|(?:www\.)?(?:github\.com|skills\.sh|raw\.githubusercontent\.com)\/|(?:npx|bunx|pnpx|pnpm\s+dlx|yarn\s+dlx)\s)|^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+(?:[/#]\S*)?$/i
+
     function StorePanel({ ui, data, hidden, onOpen, onClose }) {
       const { t } = ui
       const [query, setQuery] = React.useState('')
@@ -1257,7 +1269,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [loading, setLoading] = React.useState(false)
       const [error, setError] = React.useState(null)
       const taken = new Set(data.skills.map(skill => skill.name))
-      const ready = [...query.trim()].length >= 2
+      const address = ADDRESS.test(query.trim())
+      const ready = address || [...query.trim()].length >= 2
       React.useEffect(() => {
         post(ROUTE, 'storeIndex', {}).then(value => setRepos(value.repos), () => setRepos([]))
       }, [])
@@ -1273,10 +1286,23 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         h('div', { className: 'sk-bar' },
           h('strong', { className: 'sk-grow' }, t('store.title')),
           h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
-        h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (ready) search() } },
-          h('input', { className: 'sk-input', value: query, autoFocus: true, spellCheck: false, placeholder: t('store.placeholder'), 'aria-label': t('store.title'), onChange: event => setQuery(event.target.value) }),
-          h('button', { type: 'submit', className: 'sk-btn sk-primary', disabled: loading || !ready }, t('store.search'))),
-        h('div', { className: 'sk-hint' }, t('store.hint')),
+        h('form', { className: 'sk-bar', onSubmit: (event) => { event.preventDefault(); if (address) onOpen(query.trim()); else if (ready) search() } },
+          h('input', {
+            className: 'sk-input', value: query, autoFocus: true, spellCheck: false, placeholder: t('store.placeholder'), 'aria-label': t('store.title'),
+            onChange: event => setQuery(event.target.value),
+            // A link pasted into an empty box, or over all of its text, opens its repository at once.
+            onPaste: (event) => {
+              const pasted = event.clipboardData.getData('text').trim()
+              const { selectionStart, selectionEnd, value } = event.target
+              const replacesAll = value.trim() === '' || (selectionStart === 0 && selectionEnd === value.length)
+              if (!replacesAll || !ADDRESS.test(pasted)) return
+              event.preventDefault()
+              setQuery(pasted)
+              onOpen(pasted)
+            },
+          }),
+          h('button', { type: 'submit', className: 'sk-btn sk-primary', disabled: loading || !ready }, t(address ? 'store.open' : 'store.search'))),
+        h('div', { className: 'sk-hint' }, t(address ? 'store.addressHint' : 'store.hint')),
         error === null ? null : h('div', { className: 'sk-note is-warn', role: 'alert' }, error),
         loading ? h('div', { className: 'sk-hint' }, t('store.searching')) : null,
         results !== null ? h(React.Fragment, null,
@@ -1316,8 +1342,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const [upload, setUpload] = React.useState(null)
       const [over, setOver] = React.useState(false)
       const [address, setAddress] = React.useState(start?.repo ?? '')
+      // The repository a store address turned out to name, for the title once it is read.
+      const [repoLabel, setRepoLabel] = React.useState(null)
       const [filterText, setFilterText] = React.useState('')
       const [pickMissing, setPickMissing] = React.useState(null)
+      // Reading the same address again cannot help when the address itself names no GitHub repository.
+      const [unreadable, setUnreadable] = React.useState(false)
       const [finished, setFinished] = React.useState(null)
       const staged = from === 'upload' || from === 'github'
       const choicesFor = groups => new Map(groups.flatMap(group => group.items.map((item) => {
@@ -1397,7 +1427,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         setError(null)
         setSources(null)
         setReport([])
+        setUnreadable(false)
         post(ROUTE, 'githubSources', { url }).then((value) => {
+          setRepoLabel(value.label)
+          // A skills.sh page or a `skills add --skill` command names the skill to start with.
+          const wantedName = pick ?? value.pick
           const where = value.github.commit === undefined ? value.github.ref : `${value.github.ref} @ ${value.github.commit.slice(0, 7)}`
           const group = { source: 'github', label: t('lib.group.github', { name: value.label }), dir: where, exists: true, items: value.items }
           setUpload(value.upload)
@@ -1405,17 +1439,20 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           const initial = choicesFor([group])
           // Coming from the store, only the skill that was asked for starts selected.
           setPickMissing(null)
-          if (pick !== undefined) {
-            const wanted = value.items.filter(item => item.name === pick || item.path.split(/[\\/]/).pop() === pick)
+          if (wantedName !== undefined) {
+            const wanted = value.items.filter(item => item.name === wantedName || item.path.split(/[\\/]/).pop() === wantedName)
             for (const item of wanted) {
               if (item.status === 'new' || item.status === 'rename') initial.set(item.path, { ...initial.get(item.path), on: true })
             }
-            if (wanted.length === 0 && value.items.length > 0) setPickMissing(pick)
+            if (wanted.length === 0 && value.items.length > 0) setPickMissing(wantedName)
           }
           setChoices(initial)
           if (value.items.length === 0) setError(t('github.noSkill'))
           else if (value.truncated) setReport([{ key: 'truncated', text: t('github.truncated') }])
-        }, failure => setError(ui.describe(failure))).finally(() => setLoading(false))
+        }, (failure) => {
+          setError(ui.describe(failure))
+          setUnreadable(failure.code === 'github-only' || failure.code === 'github-url-invalid')
+        }).finally(() => setLoading(false))
       }
       const onDrop = (event) => {
         event.preventDefault()
@@ -1510,10 +1547,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const panelRef = usePanelFocus()
       const zipInput = React.useRef(null)
       const folderInput = React.useRef(null)
-      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': fromStore ? start.repo : t('lib.import'), onKeyDown: onEscape(fromStore ? onBack : onClose) },
+      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': fromStore ? repoLabel ?? start.repo : t('lib.import'), onKeyDown: onEscape(fromStore ? onBack : onClose) },
         h('div', { className: 'sk-bar' },
           fromStore ? h('button', { type: 'button', className: 'sk-btn is-ghost sk-back', onClick: onBack }, `‹ ${t('store.back')}`) : null,
-          h('strong', { className: `sk-grow${fromStore ? ' sk-path' : ''}` }, fromStore ? start.repo : t('lib.import')),
+          h('strong', { className: `sk-grow${fromStore ? ' sk-path' : ''}` }, fromStore ? repoLabel ?? start.repo : t('lib.import')),
           h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
         fromStore ? null : h('div', { className: 'sk-seg', role: 'radiogroup', 'aria-label': t('lib.import'), onKeyDown: radioKeys }, ['agents', 'folder', 'upload', 'github'].map(name => h('button', {
           key: name, type: 'button', role: 'radio', 'aria-checked': from === name, tabIndex: from === name ? 0 : -1,
@@ -1549,7 +1586,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('div', { className: 'sk-bar sk-end' },
             h('button', { type: 'button', className: 'sk-btn', onClick: onBack }, t('store.doneKeep')),
             h('button', { type: 'button', className: 'sk-btn sk-primary', onClick: onClose }, t('store.doneClose')))) : null,
-        fromStore && sources === null && !loading && finished === null && (error !== null || report.length > 0)
+        fromStore && sources === null && !loading && finished === null && !unreadable && (error !== null || report.length > 0)
           ? h('div', { className: 'sk-bar' }, h('button', { type: 'button', className: 'sk-btn', onClick: () => stageGithub(start.repo, start.pick) }, t('store.retry'))) : null,
         sources === null ? null : h(React.Fragment, null,
           h('div', { className: 'sk-bar' },

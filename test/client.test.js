@@ -30,3 +30,26 @@ test('every key the page names literally exists', () => {
   assert.ok(used.size > 200)
   assert.deepEqual([...used].filter(key => !zh.has(key)), [])
 })
+
+test('the store box opens what the Host reads as an address and searches for words', async () => {
+  const { parseGithub } = await import('../github.js')
+  const literal = /const ADDRESS = (\/.+\/[a-z]*)\r?\n/.exec(source)[1]
+  const address = new Function(`return ${literal}`)()
+  for (const text of [
+    'https://github.com/anthropics/skills',
+    'github.com/anthropics/skills/tree/main/skills/pdf',
+    'git@github.com:anthropics/skills.git',
+    'git+https://github.com/anthropics/skills.git',
+    'https://raw.githubusercontent.com/anthropics/skills/main/skills/pdf/SKILL.md',
+    'https://skills.sh/anthropics/skills/pdf',
+    'skills.sh/anthropics/skills/pdf',
+    'npx skills add anthropics/skills --skill pdf',
+    'pnpm dlx skills add https://github.com/anthropics/skills',
+    'anthropics/skills',
+    'anthropics/skills#main',
+  ]) {
+    assert.ok(address.test(text), text)
+    assert.doesNotThrow(() => parseGithub(text), text)
+  }
+  for (const text of ['pdf', 'code review', 'database migrations', 'ui / ux', 'c++']) assert.ok(!address.test(text), text)
+})

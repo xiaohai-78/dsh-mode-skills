@@ -19,8 +19,29 @@ test('reads the addresses people paste', () => {
   assert.deepEqual(parseGithub('https://github.com/a/b/blob/main/skills/pdf/SKILL.md').tries[0], { ref: 'main', path: 'skills/pdf' })
 })
 
+test('reads git, raw file, skills.sh, and skills CLI forms of an address', () => {
+  const head = [{ ref: 'HEAD', path: '' }]
+  assert.deepEqual(parseGithub('ssh://git@github.com/a/b.git'), { owner: 'a', repo: 'b', tries: head })
+  assert.deepEqual(parseGithub('git+https://github.com/a/b.git'), { owner: 'a', repo: 'b', tries: head })
+  assert.deepEqual(parseGithub('www.github.com/a/b'), { owner: 'a', repo: 'b', tries: head })
+  assert.deepEqual(parseGithub('https://raw.githubusercontent.com/a/b/main/skills/pdf/SKILL.md').tries[0], { ref: 'main', path: 'skills/pdf' })
+  assert.deepEqual(parseGithub('https://skills.sh/vercel-labs/agent-skills/web-design-guidelines'), { owner: 'vercel-labs', repo: 'agent-skills', tries: head, skill: 'web-design-guidelines' })
+  assert.deepEqual(parseGithub('skills.sh/anthropics/skills'), { owner: 'anthropics', repo: 'skills', tries: head })
+  assert.deepEqual(parseGithub('npx skills add vercel-labs/agent-skills --skill frontend-design'), { owner: 'vercel-labs', repo: 'agent-skills', tries: head, skill: 'frontend-design' })
+  assert.deepEqual(parseGithub('npx -y skills@latest add https://github.com/a/b -s "pdf"'), { owner: 'a', repo: 'b', tries: head, skill: 'pdf' })
+  assert.deepEqual(parseGithub('pnpm dlx skills add a/b --skill=pdf'), { owner: 'a', repo: 'b', tries: head, skill: 'pdf' })
+  assert.deepEqual(parseGithub('npx skills add a/b'), { owner: 'a', repo: 'b', tries: head })
+  assert.deepEqual(parseGithub('vercel-labs/next.js'), { owner: 'vercel-labs', repo: 'next.js', tries: head })
+})
+
+test('says when an address is on a host other than GitHub', () => {
+  for (const [address, host] of [['https://gitlab.com/a/b', 'gitlab.com'], ['gitee.com/a/b', 'gitee.com'], ['git@gitlab.com:a/b.git', 'gitlab.com'], ['ssh://git@bitbucket.org/a/b.git', 'bitbucket.org']]) {
+    assert.throws(() => parseGithub(address), error => error.code === 'github-only' && error.details.host === host, address)
+  }
+})
+
 test('refuses addresses that name no repository', () => {
-  for (const bad of ['', 'github', 'https://gitlab.com/a/b', 'https://github.com/a', 'https://github.com/a/b/issues', 'a/b/../x', '-a/b', 'a/b c', 'http://[bad']) {
+  for (const bad of ['', 'github', 'npx skills add', 'https://skills.sh/a', 'https://raw.githubusercontent.com/a/b', 'https://github.com/a', 'https://github.com/a/b/issues', 'a/b/../x', '-a/b', 'a/b c', 'http://[bad']) {
     assert.throws(() => parseGithub(bad), error => error.code === 'github-url-invalid', bad)
   }
 })
