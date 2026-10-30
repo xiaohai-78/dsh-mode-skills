@@ -1,7 +1,7 @@
 {
   "name": "dsh-mode-skills",
   "version": "0.4.1",
-  "description": "Skill manager for DeepSeek Harness (dsh): a sidebar page to see every skill and turn it on or off per agent mode, count its use per mode, search and tag skills, create and edit them, install them from a store, GitHub, Codex, Claude Code, or a folder, and keep versions; modes keep working after an uninstall.",
+  "description": "Skill manager for DeepSeek Harness (dsh): a sidebar page to see every skill and turn it on or off per agent mode, count its use per mode, search and tag skills, create and edit them, install them from a store, GitHub, Codex, Claude Code, or a folder, give them to every agent tool on the computer through one shared copy, and keep versions; modes keep working after an uninstall.",
   "keywords": [
     "deepseek-harness",
     "dsh",
@@ -47,6 +47,7 @@
     "skill-import.js",
     "state.js",
     "trash.js",
+    "agent-links.js",
     "diagnose.js",
     "tokens.js",
     "zip.js",

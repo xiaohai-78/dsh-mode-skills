@@ -131,21 +131,13 @@ test('lists, reads, edits, adds, and removes the other files of a skill, keeping
   assert.equal((await call('deleteSkillAsset', { skill: 'pdf-tools', rel: 'SKILL.md' })).code, 'bad-request')
 })
 
-test('exports a skill as an archive and moves it between the two user folders', async () => {
+test('exports a skill as an archive', async () => {
   const path = await writeSkill(join(skillsDir, 'standup'), '---\nname: standup\ndescription: Daily\n---\n', { 'scripts/run.sh': '#!/bin/sh\n' })
-  const { value, call } = await mount(() => [entry('standup', path, 'Daily')])
+  const { value } = await mount(() => [entry('standup', path, 'Daily')])
   await value('list')
   const exported = await value('exportSkill', { skill: 'standup' })
   assert.equal(exported.name, 'standup.zip')
   assert.deepEqual(readZip(Buffer.from(exported.zip, 'base64'), { maxFiles: 10, maxBytes: 1000 }).map(file => file.path), ['standup/SKILL.md', 'standup/scripts/run.sh'])
-  assert.equal((await call('moveSkill', { skill: 'standup', target: 'dsh' })).code, 'skill-already-there')
-  const moved = await value('moveSkill', { skill: 'standup', target: 'agents' })
-  assert.equal(moved.display, join('~', '.agents', 'skills', 'standup'))
-  assert.match(await readFile(join(agentsDir, 'standup', 'SKILL.md'), 'utf8'), /Daily/)
-  await assert.rejects(stat(join(skillsDir, 'standup')))
-  assert.equal((await value('readSkillFile', { skill: 'standup' })).path, join(agentsDir, 'standup', 'SKILL.md'), 'the skill is found at its new place')
-  await writeSkill(join(skillsDir, 'standup'), '---\nname: standup\ndescription: Another\n---\n')
-  assert.equal((await call('moveSkill', { skill: 'standup', target: 'dsh' })).code, 'skill-exists')
 })
 
 /** A GitHub source archive, as codeload serves it: one wrapper folder and the commit in the comment. */

@@ -107,8 +107,59 @@ window.__ModuleLoader__.load({
       'lib.newDescription': '描述',
       'lib.newDescriptionHint': '一句话说明什么时候用它，模型靠这句话决定是否加载',
       'lib.where': '放在',
-      'lib.whereDsh': '{path}（只给 DSH 用）',
-      'lib.whereAgents': '{path}（和其他 Agent 工具共用）',
+      'lib.whereDsh': '{path}（只给 DSH）',
+      'lib.whereAgents': '{path}（所有 Agent）',
+      'scope.label': '谁能用',
+      'scope.dsh': '只给 DSH',
+      'scope.all': '所有 Agent',
+      'scope.chipDsh': '仅 DSH',
+      'scope.chipAll': '所有 Agent',
+      'scope.gap': '{n} 个 Agent 缺链接',
+      'scope.usedBy': '能用它的：{list}',
+      'scope.whereDsh': '文件在 {path}，只有 DSH 能用它。',
+      'scope.whereAll': '文件在 {path}，所有 Agent 用的是这同一份，在哪里改都一样。',
+      'scope.missingLine': '{list} 还没有指向它的链接',
+      'scope.sameLine': '{list} 里有一份相同的副本，可以换成链接',
+      'scope.ownLine': '{list} 有自己的同名 Skill，用的是那一份，不会被覆盖',
+      'scope.fix': '补上链接',
+      'scope.linkedFolder': '这个 Skill 的文件夹本身是一个链接，只能留在原处',
+      'scope.taken': '{path} 里已经有一个同名的文件夹（DSH 现在用的是这里这份），先处理掉它，才能给所有 Agent 用',
+      'scope.willMove': '把「{name}」从 {from} 移到 {to}。',
+      'scope.willRead': '{list} 直接读取这个目录。',
+      'scope.willLink': '{list} 会在自己的 Skill 目录里得到一个指向它的链接。',
+      'scope.willReplace': '{list} 里有一份内容相同的「{name}」，会换成链接，原来那份放进回收站。',
+      'scope.willKeep': '{list} 已有自己的「{name}」（内容不同），不会动它，那边继续用它自己的。',
+      'scope.oneCopy': '始终只有一份文件，在哪里改都一样；各模式里的开关不变。',
+      'scope.noOthers': '这台电脑上没找到其他 Agent 工具；以后装了，回到这里点「补上链接」。',
+      'scope.willMoveBack': '把「{name}」从 {from} 移回 {to}。',
+      'scope.willUnlink': '删掉 {list} 里指向它的链接。',
+      'scope.willLose': '之后只有 DSH 能用它，{list} 不再看得到它；各模式里的开关不变。',
+      'scope.toAll': '给所有 Agent 用',
+      'scope.toDsh': '只给 DSH 用',
+      'scope.doneAll': '「{name}」现在所有 Agent 都能用',
+      'scope.doneDsh': '「{name}」现在只给 DSH 用',
+      'scope.doneManyAll': '{n} 个 Skill 现在所有 Agent 都能用',
+      'scope.doneManyDsh': '{n} 个 Skill 现在只给 DSH 用',
+      'scope.keptNote': '{list} 里同名的 Skill 是它自己的，没有覆盖',
+      'scope.replacedNote': '{list} 里相同的副本已换成链接，原来那份在回收站',
+      'scope.linkFailed': '{agent} 没链接上：{reason}',
+      'scope.failed': '「{name}」没改成：{reason}',
+      'agents.button': '其他 Agent',
+      'agents.title': '其他 Agent',
+      'agents.intro': '设为「所有 Agent」的 Skill 只有一份，放在 {shared}。DSH 和标着「直接读取」的工具读这个目录；其他工具在自己的 Skill 目录里放一个指向它的链接，和 npx skills add -g 的做法相同。',
+      'agents.none': '这台电脑上没找到其他 Agent 工具。支持 Claude Code、Codex、Cursor、Gemini CLI、GitHub Copilot、OpenCode、Windsurf、Qwen Code、Trae 等 30 多个。',
+      'agents.reads': '直接读取 {dir}',
+      'agents.links': '链接放在 {dir}',
+      'agents.usable': '{n} 个可用',
+      'agents.missing': '{n} 个缺链接',
+      'agents.own': '{n} 个同名的是它自己的',
+      'agents.gaps': '{n} 个「所有 Agent」的 Skill 还缺链接',
+      'agents.fixAll': '全部补上',
+      'agents.dshOnly': '{n} 个 Skill 只给 DSH 用',
+      'agents.shareAll': '全部给所有 Agent 用',
+      'agents.confirmShare': '把这 {n} 个 Skill 移到 {shared}，所有 Agent 都能用：{names}。',
+      'agents.keepNote': '其他工具里同名、内容不同的 Skill 不会被覆盖。',
+      'agents.replaceNote': '内容相同的副本会换成链接，原来那份放进回收站。',
       'lib.onIn': '在这些模式开启',
       'lib.createAction': '创建并编辑',
       'lib.created': '已创建「{name}」',
@@ -133,6 +184,7 @@ window.__ModuleLoader__.load({
       'lib.st.imported': '已导入为「{name}」',
       'lib.st.updated': '来源有更新',
       'lib.st.exists': '已有同名 Skill',
+      'lib.st.mine': '已是 DSH 的 Skill',
       'lib.st.rename': '名字需要修改',
       'lib.st.invalid': '无法导入',
       'lib.problem.no-frontmatter': 'SKILL.md 缺少 name 或 description',
@@ -293,11 +345,6 @@ window.__ModuleLoader__.load({
       'files.delete': '删除文件',
       'files.export': '导出 zip',
       'files.exported': '已导出 {name}',
-      'files.moveAgents': '移到 ~/.agents/skills',
-      'files.moveDsh': '移到 ~/.dsh/skills',
-      'files.confirmMoveAgents': '把「{name}」移到 ~/.agents/skills？其他 Agent 工具也会读到它',
-      'files.confirmMoveDsh': '把「{name}」移到 ~/.dsh/skills？其他 Agent 工具不再读到它',
-      'files.moved': '已移到 {path}',
       'files.single': '这个 Skill 是单个 .md 文件，没有其他文件',
       'files.skippedLinks': '{n} 个链接没有列出',
       'lib.importFrom.github': 'GitHub',
@@ -339,8 +386,9 @@ window.__ModuleLoader__.load({
       'err.asset-exists': '{rel} 已经存在',
       'err.asset-too-large': '文件太大，超过 {max} 字，不能在这里编辑',
       'err.skill-single-file': '这个 Skill 是单个文件，没有文件夹',
-      'err.skill-already-there': '它已经在那个文件夹里了',
-      'err.skill-not-in-user-folder': '只有两个用户目录里的 Skill 才能移动',
+      'err.skill-not-in-user-folder': '只有 ~/.dsh/skills 和 ~/.agents/skills 里的 Skill 能改谁能用',
+      'err.skill-exists-there': '{path} 已经有一个同名的 Skill，先处理掉它再试',
+      'err.skill-folder-linked': '这个 Skill 的文件夹本身是一个链接，不能移动',
       'err.alias-invalid': '显示名只能一行，最多 {max} 字',
       'err.tags-invalid': '最多 {max} 个标签，每个不超过 {chars} 字，不能含逗号',
       'err.folder-relative': '请填文件夹的完整路径，例如 ~/code/my-app',
@@ -551,7 +599,58 @@ window.__ModuleLoader__.load({
       'lib.newDescriptionHint': 'One sentence on when to use it; the model decides from it whether to load the skill',
       'lib.where': 'Save in',
       'lib.whereDsh': '{path} (DSH only)',
-      'lib.whereAgents': '{path} (shared with other agent tools)',
+      'lib.whereAgents': '{path} (all agents)',
+      'scope.label': 'Used by',
+      'scope.dsh': 'DSH only',
+      'scope.all': 'All agents',
+      'scope.chipDsh': 'DSH only',
+      'scope.chipAll': 'All agents',
+      'scope.gap': '{n} missing a link',
+      'scope.usedBy': 'Used by: {list}',
+      'scope.whereDsh': 'Its files are in {path}; only DSH uses it.',
+      'scope.whereAll': 'Its files are in {path}, the one copy every agent uses, so a change anywhere reaches all of them.',
+      'scope.missingLine': '{list}: no link to it yet',
+      'scope.sameLine': '{list}: an identical copy, which can become a link',
+      'scope.ownLine': '{list}: a skill of its own with this name, which is used there and left alone',
+      'scope.fix': 'Add the missing links',
+      'scope.linkedFolder': 'This skill\'s folder is itself a link, so it stays where it is',
+      'scope.taken': '{path} already holds a folder with this name (DSH uses the one here); deal with it before giving this skill to all agents',
+      'scope.willMove': 'Moves "{name}" from {from} to {to}.',
+      'scope.willRead': '{list} read that folder directly.',
+      'scope.willLink': '{list} get a link to it in their own skills folder.',
+      'scope.willReplace': '{list} hold an identical copy of "{name}", which becomes a link; the copy goes to the bin.',
+      'scope.willKeep': '{list} already have a different "{name}" of their own, which is left alone and stays in use there.',
+      'scope.oneCopy': 'There is only ever one copy, so a change anywhere reaches every agent; mode switches stay as they are.',
+      'scope.noOthers': 'No other agent tool was found on this computer; after installing one, come back and use Add the missing links.',
+      'scope.willMoveBack': 'Moves "{name}" from {from} back to {to}.',
+      'scope.willUnlink': 'Removes the links to it in {list}.',
+      'scope.willLose': 'Afterwards only DSH uses it, and {list} no longer see it; mode switches stay as they are.',
+      'scope.toAll': 'Give to all agents',
+      'scope.toDsh': 'Keep for DSH only',
+      'scope.doneAll': '"{name}" is now used by all agents',
+      'scope.doneDsh': '"{name}" is now for DSH only',
+      'scope.doneManyAll': '{n} skills are now used by all agents',
+      'scope.doneManyDsh': '{n} skills are now for DSH only',
+      'scope.keptNote': 'the skills with that name in {list} are their own and were left alone',
+      'scope.replacedNote': 'the identical copies in {list} became links; the copies are in the bin',
+      'scope.linkFailed': 'Could not link into {agent}: {reason}',
+      'scope.failed': '"{name}" was not changed: {reason}',
+      'agents.button': 'Other agents',
+      'agents.title': 'Other agents',
+      'agents.intro': 'A skill for all agents has one copy, in {shared}. DSH and the tools that read it directly use that folder; every other tool gets a link to it in its own skills folder, the way npx skills add -g does it.',
+      'agents.none': 'No other agent tool was found on this computer. More than 30 are supported, including Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, OpenCode, Windsurf, Qwen Code, and Trae.',
+      'agents.reads': 'reads {dir} directly',
+      'agents.links': 'links in {dir}',
+      'agents.usable': '{n} usable',
+      'agents.missing': '{n} missing a link',
+      'agents.own': '{n} with its own skill of that name',
+      'agents.gaps': '{n} skills for all agents still miss a link',
+      'agents.fixAll': 'Add them all',
+      'agents.dshOnly': '{n} skills are for DSH only',
+      'agents.shareAll': 'Give them all to all agents',
+      'agents.confirmShare': 'Move these {n} skills to {shared} so every agent uses them: {names}.',
+      'agents.keepNote': 'Different skills of the same name in other tools are left alone.',
+      'agents.replaceNote': 'Identical copies become links; the copies go to the bin.',
       'lib.onIn': 'On in these modes',
       'lib.createAction': 'Create and edit',
       'lib.created': 'Created {name}',
@@ -576,6 +675,7 @@ window.__ModuleLoader__.load({
       'lib.st.imported': 'Imported as {name}',
       'lib.st.updated': 'Source changed',
       'lib.st.exists': 'Name in use',
+      'lib.st.mine': 'Already a DSH skill',
       'lib.st.rename': 'Needs a new name',
       'lib.st.invalid': 'Cannot import',
       'lib.problem.no-frontmatter': 'SKILL.md is missing name or description',
@@ -736,11 +836,6 @@ window.__ModuleLoader__.load({
       'files.delete': 'Delete file',
       'files.export': 'Export zip',
       'files.exported': 'Exported {name}',
-      'files.moveAgents': 'Move to ~/.agents/skills',
-      'files.moveDsh': 'Move to ~/.dsh/skills',
-      'files.confirmMoveAgents': 'Move "{name}" to ~/.agents/skills? Other agent tools will read it too',
-      'files.confirmMoveDsh': 'Move "{name}" to ~/.dsh/skills? Other agent tools will stop reading it',
-      'files.moved': 'Moved to {path}',
       'files.single': 'This skill is a single .md file with no other files',
       'files.skippedLinks': '{n} links are not listed',
       'lib.importFrom.github': 'GitHub',
@@ -782,8 +877,9 @@ window.__ModuleLoader__.load({
       'err.asset-exists': '{rel} already exists',
       'err.asset-too-large': 'The file is larger than {max} characters and cannot be edited here',
       'err.skill-single-file': 'This skill is a single file, not a folder',
-      'err.skill-already-there': 'It is already in that folder',
-      'err.skill-not-in-user-folder': 'Only skills in the two user folders can be moved',
+      'err.skill-not-in-user-folder': 'Only skills in ~/.dsh/skills and ~/.agents/skills can change who uses them',
+      'err.skill-exists-there': '{path} already holds a skill with this name; deal with it first',
+      'err.skill-folder-linked': 'This skill\'s folder is itself a link and cannot be moved',
       'err.alias-invalid': 'The display name must be one line of at most {max} characters',
       'err.tags-invalid': 'At most {max} tags of {chars} characters each, without commas',
       'err.folder-relative': 'Give the full path of the folder, e.g. ~/code/my-app',
@@ -1009,6 +1105,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
 .sk-seg.is-small button { padding: 2px 9px; font-size: 11px; }
 .sk-seg button:disabled { opacity: .45; cursor: default; }
 .sk-moderows { display: flex; flex-direction: column; gap: 8px; }
+.sk-scope { display: flex; flex-direction: column; gap: 4px; }
 .sk-moderow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .sk-moderow .sk-modename { min-width: 108px; }
 .sk-drop { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding: 22px 12px; border-radius: var(--sk-r-md); border: 1px dashed var(--dsw-alias-border-l3); text-align: center; color: var(--dsw-alias-label-secondary); }
@@ -1192,7 +1289,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       return ref
     }
 
-    /** The folder menu for new skills: DSH's own folder or the one shared with other agent tools. */
+    /** The folder menu for new skills: DSH's own folder, or the shared folder whose skills every agent tool uses. */
     function WhereSelect({ ui, roots, value, onChange, id }) {
       const { t } = ui
       return h('select', { id, className: 'sk-select', value, onChange: event => onChange(event.target.value) },
@@ -1366,6 +1463,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           if (path === undefined && ui.manager === 'dsh-modes') {
             const extra = await post(ROUTE, 'agentSources', {}).catch(() => ({ groups: [] }))
             value = { ...value, groups: [...value.groups, ...extra.groups] }
+          }
+          // dsh-modes, which answers while installed, lists another tool's link to a DSH skill as a skill of its own.
+          if (ui.manager === 'dsh-modes') {
+            const mine = item => [data.roots.dsh, data.roots.agents].includes(String(item.display).replace(/[\\/][^\\/]+$/, ''))
+            value = { ...value, groups: value.groups.map(group => ({ ...group, items: group.items.map(item => (mine(item) ? { ...item, status: 'mine' } : item)) })) }
           }
           setSources(value)
           setChoices(choicesFor(value.groups))
@@ -1691,19 +1793,12 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         setTimeout(() => URL.revokeObjectURL(url), 10000)
         ui.notify('done', t('files.exported', { name: value.name }))
       }, error => ui.fail(error))
-      const moveTarget = skill.source === 'user-dsh' ? 'agents' : skill.source === 'user-agents' ? 'dsh' : undefined
-      const movable = skill.editable && moveTarget !== undefined && listing !== null && listing.single !== true
       const others = listing === null ? [] : listing.files.filter(file => file.rel !== 'SKILL.md')
       return h('div', { className: 'sk-section' },
         h('div', { className: 'sk-bar' },
           h('button', { type: 'button', className: 'sk-btn', 'aria-expanded': open, onClick: () => setOpen(!open) }, t(open ? 'files.hide' : 'files.show')),
-          open ? h('button', { type: 'button', className: 'sk-btn', disabled: busy, onClick: exportZip }, t('files.export')) : null,
-          open && movable ? h('button', { type: 'button', className: 'sk-btn', disabled: busy, onClick: () => setConfirm({ kind: 'move' }) }, t(moveTarget === 'agents' ? 'files.moveAgents' : 'files.moveDsh')) : null),
+          open ? h('button', { type: 'button', className: 'sk-btn', disabled: busy, onClick: exportZip }, t('files.export')) : null),
         !open ? null : h(React.Fragment, null,
-          confirm?.kind === 'move' ? h(ConfirmBox, {
-            ui, text: t(moveTarget === 'agents' ? 'files.confirmMoveAgents' : 'files.confirmMoveDsh', { name: skill.name }), action: t(moveTarget === 'agents' ? 'files.moveAgents' : 'files.moveDsh'), busy,
-            onCancel: () => setConfirm(null), onConfirm: () => ui.own('moveSkill', { skill: skill.name, target: moveTarget }, value => t('files.moved', { path: value.display })).then(() => setConfirm(null)),
-          }) : null,
           listing === null ? h('div', { className: 'sk-hint' }, t('files.reading')) : listing.single ? h('div', { className: 'sk-hint' }, t('files.single')) : h(React.Fragment, null,
             others.map(file => h('div', { key: file.rel, className: 'sk-bar' },
               h('span', { className: 'sk-path sk-grow' }, file.rel),
@@ -1952,6 +2047,114 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       return loading.length > 0 && loading.length <= MAX_COLUMNS ? loading : []
     }
 
+    /** Names joined as a list in the page's language. */
+    function listOf(ui, names) {
+      return names.join(zhLike(ui.lang) ? '、' : ', ')
+    }
+
+    /** The installed tools a skill for all agents has no link in yet, or holds an identical copy in. */
+    function gapsOf(data, skill) {
+      return data.agents.filter(agent => agent.via === 'link' && (skill.reach.agents[agent.id] === 'missing' || skill.reach.agents[agent.id] === 'same'))
+    }
+
+    /** DSH and the installed tools that use a skill now. */
+    function usersOf(data, skill) {
+      return ['DSH', ...data.agents.filter(agent => skill.reach.agents[agent.id] === 'shared' || skill.reach.agents[agent.id] === 'linked').map(agent => agent.label)]
+    }
+
+    /**
+     * Who can use a skill in the user folders: DSH alone, or every agent tool on this computer through one shared copy
+     * and links to it. A change is confirmed with what it will do to each tool.
+     */
+    function ScopeControl({ ui, data, skill }) {
+      const { t } = ui
+      const [confirm, setConfirm] = React.useState(null)
+      const { reach } = skill
+      const by = (...states) => data.agents.filter(agent => states.includes(reach.agents[agent.id]))
+      const labels = agents => listOf(ui, agents.map(agent => agent.label))
+      const linkable = by('missing').filter(agent => agent.via === 'link')
+      const gaps = reach.scope === 'all' ? gapsOf(data, skill) : []
+      const blocked = { all: reach.scope === 'dsh' && (reach.linkedFolder === true || reach.taken === true), dsh: reach.scope === 'all' && reach.linkedFolder === true }
+      const plans = {
+        all: () => [
+          reach.scope === 'dsh' ? t('scope.willMove', { name: skill.name, from: data.roots.dsh, to: data.roots.agents }) : undefined,
+          t('scope.willRead', { list: listOf(ui, ['DSH', ...data.agents.filter(agent => agent.via === 'shared').map(agent => agent.label)]) }),
+          linkable.length > 0 ? t('scope.willLink', { list: labels(linkable) }) : undefined,
+          by('same').length > 0 ? t('scope.willReplace', { list: labels(by('same')), name: skill.name }) : undefined,
+          by('own').length > 0 ? t('scope.willKeep', { list: labels(by('own')), name: skill.name }) : undefined,
+          data.agents.length === 0 ? t('scope.noOthers') : t('scope.oneCopy'),
+        ],
+        dsh: () => [
+          t('scope.willMoveBack', { name: skill.name, from: data.roots.agents, to: data.roots.dsh }),
+          by('linked').length > 0 ? t('scope.willUnlink', { list: labels(by('linked')) }) : undefined,
+          by('shared', 'linked').length > 0 ? t('scope.willLose', { list: labels(by('shared', 'linked')) }) : undefined,
+        ],
+      }
+      const plan = target => plans[target === 'dsh' ? 'dsh' : 'all']().filter(Boolean).join(zhLike(ui.lang) ? '' : ' ')
+      // Filling links needs no confirmation unless a tool's own copy would go to the bin.
+      const fix = () => (by('same').length > 0 ? setConfirm('fix') : ui.setScope([skill.name], 'all'))
+      return h('div', { className: 'sk-scope' },
+        h('div', { className: 'sk-bar' },
+          h('div', { className: 'sk-seg is-small', role: 'radiogroup', 'aria-label': t('scope.label'), onKeyDown: radioKeys }, ['dsh', 'all'].map(target => h('button', {
+            key: target, type: 'button', role: 'radio', 'aria-checked': reach.scope === target, tabIndex: reach.scope === target ? 0 : -1, disabled: ui.libBusy || blocked[target],
+            onClick: () => { if (reach.scope !== target) setConfirm(target) },
+          }, t(`scope.${target}`)))),
+          gaps.length > 0 ? h('button', { type: 'button', className: 'sk-btn', disabled: ui.libBusy, onClick: fix }, t('scope.fix')) : null),
+        h('div', { className: 'sk-hint' }, t(reach.scope === 'all' ? 'scope.whereAll' : 'scope.whereDsh', { path: (skill.display ?? skill.name).replace(/[\\/]SKILL\.md$/, '') })),
+        reach.scope === 'all' ? h('div', { className: 'sk-hint' }, t('scope.usedBy', { list: listOf(ui, usersOf(data, skill)) })) : null,
+        reach.scope === 'all' && linkable.length > 0 ? h('div', { className: 'sk-hint is-warn' }, t('scope.missingLine', { list: labels(linkable) })) : null,
+        reach.scope === 'all' && by('same').length > 0 ? h('div', { className: 'sk-hint is-warn' }, t('scope.sameLine', { list: labels(by('same')) })) : null,
+        reach.scope === 'all' && by('own').length > 0 ? h('div', { className: 'sk-hint' }, t('scope.ownLine', { list: labels(by('own')) })) : null,
+        reach.linkedFolder === true ? h('div', { className: 'sk-hint' }, t('scope.linkedFolder'))
+          : reach.taken === true ? h('div', { className: 'sk-hint is-warn' }, t('scope.taken', { path: data.roots.agents })) : null,
+        confirm === null ? null : h(ConfirmBox, {
+          ui, text: plan(confirm), action: t(confirm === 'dsh' ? 'scope.toDsh' : confirm === 'fix' ? 'scope.fix' : 'scope.toAll'), busy: ui.libBusy,
+          onCancel: () => setConfirm(null), onConfirm: () => ui.setScope([skill.name], confirm === 'dsh' ? 'dsh' : 'all').then(() => setConfirm(null)),
+        }))
+    }
+
+    /** The agent tools on this computer, how each one uses skills for all agents, and the changes to make in one go. */
+    function AgentsPanel({ ui, data, onClose }) {
+      const { t } = ui
+      const [confirm, setConfirm] = React.useState(null)
+      const panelRef = usePanelFocus()
+      const shared = data.skills.filter(skill => skill.reach?.scope === 'all')
+      const dshOnly = data.skills.filter(skill => skill.reach?.scope === 'dsh' && skill.reach.linkedFolder !== true && skill.reach.taken !== true)
+      const withGaps = shared.filter(skill => gapsOf(data, skill).length > 0)
+      const count = (agent, ...states) => shared.filter(skill => states.includes(skill.reach.agents[agent.id])).length
+      const anyIn = (list, state) => list.some(skill => Object.values(skill.reach.agents).includes(state))
+      const sameIn = withGaps.flatMap(skill => data.agents.filter(agent => skill.reach.agents[agent.id] === 'same'))
+      const run = (skills, scope) => ui.setScope(skills.map(skill => skill.name), scope).then(() => setConfirm(null))
+      return h('div', { className: 'sk-panel', ref: panelRef, tabIndex: -1, role: 'group', 'aria-label': t('agents.title'), onKeyDown: onEscape(onClose) },
+        h('div', { className: 'sk-bar' },
+          h('strong', { className: 'sk-grow' }, t('agents.title')),
+          h('button', { type: 'button', className: 'sk-btn', onClick: onClose }, t('close'))),
+        h('div', { className: 'sk-hint' }, t('agents.intro', { shared: data.roots.agents })),
+        data.agents.length === 0 ? h('div', { className: 'sk-note' }, t('agents.none')) : h('div', { className: 'sk-moderows' }, data.agents.map(agent => h('div', { key: agent.id, className: 'sk-moderow' },
+          h('span', { className: 'sk-modename' }, agent.label),
+          h('span', { className: 'sk-hint sk-grow sk-path' }, t(agent.via === 'shared' ? 'agents.reads' : 'agents.links', { dir: agent.dir })),
+          h('span', { className: 'sk-meta' }, [
+            t('agents.usable', { n: count(agent, 'shared', 'linked') }),
+            count(agent, 'missing', 'same') > 0 ? t('agents.missing', { n: count(agent, 'missing', 'same') }) : undefined,
+            count(agent, 'own') > 0 ? t('agents.own', { n: count(agent, 'own') }) : undefined,
+          ].filter(Boolean).join(' · '))))),
+        withGaps.length === 0 ? null : h('div', { className: 'sk-bar' },
+          h('span', { className: 'sk-grow' }, t('agents.gaps', { n: withGaps.length })),
+          h('button', { type: 'button', className: 'sk-btn', disabled: ui.libBusy, onClick: () => (sameIn.length > 0 ? setConfirm('fix') : run(withGaps, 'all')) }, t('agents.fixAll'))),
+        dshOnly.length === 0 ? null : h('div', { className: 'sk-bar' },
+          h('span', { className: 'sk-grow' }, t('agents.dshOnly', { n: dshOnly.length })),
+          h('button', { type: 'button', className: 'sk-btn', disabled: ui.libBusy, onClick: () => setConfirm('share') }, t('agents.shareAll'))),
+        confirm === 'share' ? h(ConfirmBox, {
+          ui, busy: ui.libBusy, action: t('agents.shareAll'), onCancel: () => setConfirm(null), onConfirm: () => run(dshOnly, 'all'),
+          text: [t('agents.confirmShare', { n: dshOnly.length, shared: data.roots.agents, names: listOf(ui, dshOnly.map(skill => skill.name)) }),
+            anyIn(dshOnly, 'own') ? t('agents.keepNote') : undefined, anyIn(dshOnly, 'same') ? t('agents.replaceNote') : undefined].filter(Boolean).join(zhLike(ui.lang) ? '' : ' '),
+        }) : null,
+        confirm === 'fix' ? h(ConfirmBox, {
+          ui, busy: ui.libBusy, action: t('agents.fixAll'), onCancel: () => setConfirm(null), onConfirm: () => run(withGaps, 'all'),
+          text: t('scope.willReplace', { list: listOf(ui, [...new Set(sameIn.map(agent => agent.label))]), name: listOf(ui, withGaps.filter(skill => anyIn([skill], 'same')).map(skill => skill.name)) }),
+        }) : null)
+    }
+
     function SkillRow({ skill, data, filter, columns, open, onToggle, ui, autoEdit, onAutoEdited, bodyOnly }) {
       const { t } = ui
       const rowRef = React.useRef(null)
@@ -1982,7 +2185,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('button', { type: 'button', className: 'sk-head', 'aria-expanded': open, onClick: onToggle },
             h('span', { className: 'sk-caret', 'aria-hidden': true }, '›'),
             skill.alias === undefined ? h('span', { className: 'sk-name' }, skill.name) : h(React.Fragment, null, h('span', { className: 'sk-alias' }, skill.alias), h('span', { className: 'sk-name is-dim' }, skill.name)),
-            skill.source === undefined ? null : h('span', { className: 'sk-chip sk-narrow-hide' }, ui.sourceName(skill)),
+            skill.source === undefined ? null : skill.reach === undefined
+              ? h('span', { className: 'sk-chip sk-narrow-hide' }, ui.sourceName(skill))
+              : h('span', { className: 'sk-chip sk-narrow-hide', title: t('scope.usedBy', { list: listOf(ui, usersOf(data, skill)) }) }, t(skill.reach.scope === 'all' ? 'scope.chipAll' : 'scope.chipDsh')),
+            skill.reach?.scope === 'all' && gapsOf(data, skill).length > 0 ? h('span', { className: 'sk-badge is-warn sk-narrow-hide' }, t('scope.gap', { n: gapsOf(data, skill).length })) : null,
             (skill.tags ?? []).map(tag => h('span', { key: `tag:${tag}`, className: 'sk-chip is-tag' }, tag)),
             bodyOnly ? h('span', { className: 'sk-badge' }, t('search.body')) : null,
             skill.exists === false ? h('span', { className: 'sk-badge is-error' }, t('lib.missing')) : null,
@@ -1999,6 +2205,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           h('dl', { className: 'sk-details' },
             skill.display === undefined ? null : [h('dt', { key: 'p:t' }, t('detail.path')), h('dd', { key: 'p:d', className: 'sk-path' }, skill.display)],
             skill.source === undefined ? null : [h('dt', { key: 's:t' }, t('detail.source')), h('dd', { key: 's:d' }, ui.sourceName(skill))],
+            skill.reach === undefined ? null : [h('dt', { key: 'r:t' }, t('scope.label')), h('dd', { key: 'r:d' }, h(ScopeControl, { ui, data, skill }))],
             skill.whenToUse === undefined ? null : [h('dt', { key: 'w:t' }, t('detail.whenToUse')), h('dd', { key: 'w:d' }, skill.whenToUse)],
             skill.tokens === undefined ? null : [h('dt', { key: 'k:t' }, t('detail.tokens')), h('dd', { key: 'k:d', title: t('tok.hint') }, t('tok.skill', { n: skill.tokens }))],
             ui.usage === null ? null : [h('dt', { key: 'u:t' }, t('detail.usage')), h('dd', { key: 'u:d' }, usageOf(ui.usage, skill.name) === undefined
@@ -2622,6 +2829,10 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
       const createSkill = (payload) => {
         setLibBusy(true)
         lib(data.manager, 'createSkill', payload).then((value) => {
+          // "All agents" means links in the other tools too, which the library actions leave out.
+          if (payload.target !== 'agents') return { value, linked: null }
+          return linkShared([value.name]).then(linked => ({ value, linked }))
+        }).then(({ value, linked }) => {
           if (!alive.current) return
           setPanel(null)
           setOpenNames(current => new Set(current).add(value.name))
@@ -2629,7 +2840,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           setPinned(value.name)
           const failed = value.failed ?? []
           if (failed.length > 0) show({ kind: 'warn', text: t('effect.failed', { modes: namesOf(failed.map(item => item.id)), reason: failed[0].error }) })
-          else show({ kind: 'done', text: `${t('lib.created', { name: value.name })} · ${t('lib.newEffect')}` })
+          else show(linked ?? { kind: 'done', text: `${t('lib.created', { name: value.name })} · ${t('lib.newEffect')}` })
           return load(true).then(() => {
             // A skill no mode lists yet would leave the editor waiting for a row that never appears.
             if (alive.current && !dataRef.current?.skills.some(skill => skill.name === value.name)) {
@@ -2657,8 +2868,11 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             failed > 0 ? t('lib.importFailed', { n: failed }) : undefined,
             results.length > failed ? t('lib.newEffect') : undefined,
           ].filter(Boolean)
-          if (alive.current) show({ kind: failed > 0 ? 'warn' : 'done', text: parts.join(' · ') })
-          return load(true).then(() => results)
+          const linking = target === 'agents' ? linkShared(results.filter(result => result.status === 'imported').map(result => result.name)) : Promise.resolve(null)
+          return linking.then((linked) => {
+            if (alive.current) show(linked ?? { kind: failed > 0 ? 'warn' : 'done', text: parts.join(' · ') })
+            return load(true).then(() => results)
+          })
         }, (error) => {
           if (alive.current) show({ kind: 'warn', text: describe(error) })
           return null
@@ -2769,6 +2983,39 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
           }, (error) => { if (alive.current) show({ kind: 'warn', text: describe(error) }) })
           .finally(() => { if (alive.current) setLibBusy(false) })
       }
+      const agentLabel = id => dataRef.current?.agents.find(agent => agent.id === id)?.label ?? id
+      /** What a setScope request did, as a notice. */
+      const scopeNotice = (results, scope) => {
+        const done = results.filter(result => result.status === 'done')
+        const refused = results.find(result => result.status === 'error')
+        const unlinked = done.flatMap(result => result.failed)[0]
+        const kept = [...new Set(done.flatMap(result => result.kept ?? []))]
+        const replaced = [...new Set(done.flatMap(result => result.replaced ?? []))]
+        const parts = [
+          done.length === 1 ? t(scope === 'all' ? 'scope.doneAll' : 'scope.doneDsh', { name: done[0].skill }) : undefined,
+          done.length > 1 ? t(scope === 'all' ? 'scope.doneManyAll' : 'scope.doneManyDsh', { n: done.length }) : undefined,
+          replaced.length > 0 ? t('scope.replacedNote', { list: replaced.map(agentLabel).join(zh ? '、' : ', ') }) : undefined,
+          kept.length > 0 ? t('scope.keptNote', { list: kept.map(agentLabel).join(zh ? '、' : ', ') }) : undefined,
+          unlinked === undefined ? undefined : t('scope.linkFailed', { agent: agentLabel(unlinked.agent), reason: unlinked.error }),
+          refused === undefined ? undefined : t('scope.failed', { name: refused.skill, reason: describeCode(refused.code, refused.details, refused.error) }),
+        ].filter(Boolean)
+        return { kind: refused === undefined && unlinked === undefined ? 'done' : 'warn', text: parts.join(' · ') }
+      }
+      /** Choose who can use skills (the Host's setScope), say how it went, and read the list again. */
+      const setScope = (skills, scope) => {
+        setLibBusy(true)
+        return post(ROUTE, 'setScope', { skills, scope }).then((value) => {
+          if (alive.current) show(scopeNotice(value.results, scope))
+          // A moved skill has a new path, which dsh-modes's view learns only on a refresh.
+          return load(value.results.some(result => result.moved === true))
+        }, (error) => { if (alive.current) show({ kind: 'warn', text: describe(error) }) })
+          .finally(() => { if (alive.current) setLibBusy(false) })
+      }
+      /** Link skills just put in the shared folder into the other agent tools; resolves to a warning notice, or null. */
+      const linkShared = names => (names.length === 0 ? Promise.resolve(null) : post(ROUTE, 'setScope', { skills: names, scope: 'all' }).then((value) => {
+        const notice = scopeNotice(value.results, 'all')
+        return notice.kind === 'warn' ? notice : null
+      }, error => ({ kind: 'warn', text: describe(error) })))
       /** Open the import page on a repository chosen in the store. */
       const openFromStore = (repo, pick) => {
         setImportStart({ repo, pick, at: Date.now() })
@@ -2821,6 +3068,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
         run,
         quiet: (action, payload, success) => run(action, payload, success).catch(() => false),
         runImport,
+        setScope,
         lib: (action, payload) => lib(data.manager, action, payload),
         fail: (error) => { if (alive.current) show({ kind: 'warn', text: describe(error) }) },
         describe,
@@ -2939,6 +3187,8 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             h('div', { className: 'sk-tools' },
               h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'project', disabled: data === null, onClick: () => setPanel(panel === 'project' ? null : 'project') }, project === '' ? t('project.button') : `${t('project.button')} ✓`),
               h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'usage', disabled: data === null, onClick: openUsage }, t('usage.button')),
+              // A Host older than this page, still running until DSH restarts, does not report the agent tools.
+              data?.agents === undefined ? null : h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'agents', onClick: () => setPanel(panel === 'agents' ? null : 'agents') }, t('agents.button')),
               githubSkills.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn is-ghost', disabled: libBusy, onClick: checkUpdates }, t('github.check')),
               data === null || data.trash.length === 0 ? null : h('button', { type: 'button', className: 'sk-btn is-ghost', 'aria-expanded': panel === 'trash', onClick: () => setPanel(panel === 'trash' ? null : 'trash') }, t('trash.button', { n: data.trash.length })),
               h('button', { type: 'button', className: 'sk-btn is-ghost', disabled: loading, onClick: () => load(true) }, t('refresh')))),
@@ -2946,6 +3196,7 @@ button.sk-chip:disabled { cursor: default; opacity: .6; }
             ui, data, usage, loading: usageLoading, error: usageError, days: usageDays,
             onDays: (days) => { setUsageDays(days); void loadUsage(days, false) }, onRefresh: () => loadUsage(usageDays, true), onClose: () => setPanel(null),
           }) : null,
+          data?.agents !== undefined && panel === 'agents' ? h(AgentsPanel, { ui, data, onClose: () => setPanel(null) }) : null,
           data !== null && panel === 'project' ? h(ProjectPanel, { ui, project, onApply: applyProject, onClose: () => setPanel(null) }) : null,
           data !== null && data.project !== undefined && panel !== 'project' ? h('div', { className: 'sk-note' },
             h('span', { className: 'sk-grow' }, t('project.active', { path: data.project })),

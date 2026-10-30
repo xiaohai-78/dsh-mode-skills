@@ -19,9 +19,10 @@ DeepSeek Harness（dsh）的 Skill（技能）管理插件。它在侧栏「插�
 - **token 开销**：每个 Skill 和每个模式的 Skill 目录都标出大约占多少 token（模式的开销写在它那一列的标题下面，在这一列开关 Skill 时跟着变），可以按 token 排序，方便决定在哪个模式关掉哪些。估算方法见下面的「开发」。
 - **没被加载的 Skill**：Skill 目录里有 SKILL.md、但 DSH 没有加载的文件会列出来，写明原因（缺 frontmatter、YAML 写法有误、name 不合规、旧写法的字段等）。能自动改的直接给出改好的内容，确认后保存；旧文件会先备份。
 - **回收站**：删除的 Skill 移进回收站，可以恢复到原位置或彻底删除；刚删除时提示里有「撤销」。回收站不会自动清空。
-- **新建和编辑**：「新建 Skill」里填名称和描述，选放在 DSH 自己的目录还是和其他 Agent 工具共用的目录，以及在哪些模式开启；创建后直接打开 SKILL.md 编辑。展开任一 Skill 也能编辑它的 SKILL.md：保存前会自动把当前文件存成一个版本，编辑期间文件被别处改动时会提示。没保存的修改会在当前标签页里保留：折叠这一行或去别的页面再回来都还在（这一行会标「未保存」），离开编辑器时会先确认。搜索、筛选和展开的行也同样保留。属于已安装包的 Skill 不能修改文件。
-- **文件、导出、移动**：「文件和导出」列出 Skill 文件夹里的其他文件，可以查看、编辑、新增和删除（改动前的旧文件会备份在 `.dsh-mode-skills/backups/`），可以把 Skill 导出成 `.zip`，也可以在 `~/.dsh/skills` 和 `~/.agents/skills` 之间移动。
-- **导入**：「导入 Skill」列出 Codex（`~/.codex/skills`）、Claude Code（`~/.claude/skills`，以及插件里的 Skill）和其他 Agent 工具（按 `~/.<工具>/skills` 的约定自动发现，比如 Cursor、Gemini CLI）中的 Skill，也可以读任意文件夹，或拖入、选择 `.zip` 和 Skill 文件夹上传。勾选后复制进来；重名时可以改名导入，或覆盖现有 Skill（覆盖前先存一个版本）。上传的 Skill 不记录来源。
+- **新建和编辑**：「新建 Skill」里填名称和描述，选谁能用（只给 DSH，或所有 Agent），以及在哪些模式开启；创建后直接打开 SKILL.md 编辑。展开任一 Skill 也能编辑它的 SKILL.md：保存前会自动把当前文件存成一个版本，编辑期间文件被别处改动时会提示。没保存的修改会在当前标签页里保留：折叠这一行或去别的页面再回来都还在（这一行会标「未保存」），离开编辑器时会先确认。搜索、筛选和展开的行也同样保留。属于已安装包的 Skill 不能修改文件。
+- **文件和导出**：「文件和导出」列出 Skill 文件夹里的其他文件，可以查看、编辑、新增和删除（改动前的旧文件会备份在 `.dsh-mode-skills/backups/`），也可以把 Skill 导出成 `.zip`。
+- **只给 DSH，或所有 Agent**：你自己目录里的每个 Skill 都标出谁能用：「仅 DSH」或「所有 Agent」，展开后的「谁能用」可以切换。「所有 Agent」只保留一份文件，放在 `~/.agents/skills`：DSH、Codex、Cline、Zed 等直接读取这个目录；这台电脑上装的其他 Agent 工具（Claude Code、Cursor、Gemini CLI、GitHub Copilot、OpenCode、Windsurf、Qwen Code、Trae 等 20 多个，按它们自己的目录识别）在自己的 Skill 目录里得到一个指向它的链接。在哪里改都是同一份，各模式里的开关不变。切换前页面会说明对每个工具做什么：内容相同的副本换成链接（原来那份放进回收站），内容不同的同名 Skill 不会动。「只给 DSH」把 Skill 移回 `~/.dsh/skills` 并删掉这些链接。目录结构和 `npx skills add -g` 相同，两边装的能互相认出。「其他 Agent」（在「使用统计」旁边）列出找到的工具和各自能用几个 Skill，可以给新装的工具补上缺的链接，也可以把所有只给 DSH 的 Skill 一次给所有 Agent 用。新建或导入时选「所有 Agent」会同样链接好；删除 Skill 会删掉它的链接，从回收站恢复时再补回来。Windows 上用的是目录联接（junction），不需要管理员权限。
+- **导入**：「导入 Skill」列出 Codex（`~/.codex/skills`）、Claude Code（`~/.claude/skills`，以及插件里的 Skill）和其他 Agent 工具（按 `~/.<工具>/skills` 的约定自动发现，比如 Cursor、Gemini CLI）中的 Skill，也可以读任意文件夹，或拖入、选择 `.zip` 和 Skill 文件夹上传。勾选后复制进来；其他工具里指向 DSH 已有 Skill 的链接标为「已是 DSH 的 Skill」；重名时可以改名导入，或覆盖现有 Skill（覆盖前先存一个版本）。上传的 Skill 不记录来源。
 - **来源更新提醒**：导入的 Skill 记住来源。来源之后有变化，列表上会标「来源有更新」，展开后可以一键重新导入。
 - **版本历史**：手动保存版本（可以写备注），查看、恢复到文件（恢复前先存当前文件）或删除；删除的版本号不会再用。
 - **卸载后模式照常可用**：见下面的「卸载」。
@@ -71,7 +72,7 @@ dsh plugin --profile web remove dsh-mode-skills
 2. **按模式开关**（已完成）：只装本插件也能用；卸载后模式照常可用；装了模式管理时通过它保存。
 3. **Skill 库**（已完成）：新建、编辑、从 Codex / Claude Code / 文件夹导入、来源更新提醒、版本历史；装了模式管理时通过它保存。
 4. **补齐常用功能**（已完成）：回收站、没被加载的 Skill 诊断和修复、token 开销、上传 zip 和文件夹、更多 Agent 目录、按模式「仅手动」。
-5. **管理和 GitHub**（已完成）：仅模型、标签和显示名、正文搜索、项目里的 Skill、批量开关、Skill 文件夹里的文件、导出和移动、从 GitHub 安装并检查更新、把「关闭」交给模式管理。
+5. **管理和 GitHub**（已完成）：仅模型、标签和显示名、正文搜索、项目里的 Skill、批量开关、Skill 文件夹里的文件、导出、只给 DSH 或所有 Agent、从 GitHub 安装并检查更新、把「关闭」交给模式管理。
 6. **Skill 商城和使用统计**（已完成）：搜索 skills.sh 和推荐仓库，通过 GitHub 流程安装；从会话历史统计每个 Skill 在各模式的使用次数。
 7. **以后**：skills.sh 之外自建的索引、和模式管理共用一份 Skill 数据、模式管理里支持「仅手动」「仅模型」、在对话里管理 Skill 的工具。
 
@@ -79,13 +80,14 @@ dsh plugin --profile web remove dsh-mode-skills
 
 | 文件 | 作用 |
 |---|---|
-| `index.js` | Host 插件：提供 `POST /api/dsh-mode-skills` 和策略行读取的 `dshModeSkills` 服务。操作有：`list`、`setModes`，和 dsh-modes 同名、同参数的 Skill 库操作（`createSkill`、`readSkillFile`、`writeSkillFile`、`saveSkillVersion`、`restoreSkillVersion`、`deleteSkillVersion`、`readSkillVersion`、`skillSources`、`importSkills`），以及本插件自己的：`deleteSkill` 和回收站、`readSkipped`、`writeSkipped`、`stageUpload`、`importUploads`、`agentSources`、`setMeta`、`searchSkills`、`listSkillFiles`、`readSkillAsset`、`writeSkillAsset`、`deleteSkillAsset`、`exportSkill`、`moveSkill`、`githubSources`、`checkUpdates`、`updateGithub`、`clearModes`、`usage`、`storeSearch`、`storeIndex`，以及插件更新相关的 `updateStatus`、`setUpdateCheck`、`dismissUpgraded`、`upgrade`、`upgradeStatus`、`cancelUpgrade`（这些总是由本插件回答）。装了 dsh-modes 时，Skill 库和设置类操作会拒绝（`managed-by-modes`）。`list` 用 `agentPresets.acquireScope` 为每个模式挂载作用域，读取 `skills.snapshot`（选了项目文件夹时带上 `cwd`）和是否有 `skill` 工具，再释放作用域；每个模式的结果缓存 60 秒，改动过的模式和页面的「刷新」会跳过缓存。启动时给本插件写过的模式补上卸载条件，并在模式只差本插件这一行时并入 DSH 的内置更新 |
+| `index.js` | Host 插件：提供 `POST /api/dsh-mode-skills` 和策略行读取的 `dshModeSkills` 服务。操作有：`list`、`setModes`，和 dsh-modes 同名、同参数的 Skill 库操作（`createSkill`、`readSkillFile`、`writeSkillFile`、`saveSkillVersion`、`restoreSkillVersion`、`deleteSkillVersion`、`readSkillVersion`、`skillSources`、`importSkills`），以及本插件自己的：`deleteSkill` 和回收站、`readSkipped`、`writeSkipped`、`stageUpload`、`importUploads`、`agentSources`、`setMeta`、`searchSkills`、`listSkillFiles`、`readSkillAsset`、`writeSkillAsset`、`deleteSkillAsset`、`exportSkill`、`setScope`、`githubSources`、`checkUpdates`、`updateGithub`、`clearModes`、`usage`、`storeSearch`、`storeIndex`，以及插件更新相关的 `updateStatus`、`setUpdateCheck`、`dismissUpgraded`、`upgrade`、`upgradeStatus`、`cancelUpgrade`（这些总是由本插件回答）。装了 dsh-modes 时，Skill 库和设置类操作会拒绝（`managed-by-modes`）。`list` 用 `agentPresets.acquireScope` 为每个模式挂载作用域，读取 `skills.snapshot`（选了项目文件夹时带上 `cwd`）和是否有 `skill` 工具，再释放作用域；每个模式的结果缓存 60 秒，改动过的模式和页面的「刷新」会跳过缓存。启动时给本插件写过的模式补上卸载条件，并在模式只差本插件这一行时并入 DSH 的内置更新 |
 | `policy.js` | 放进模式里的策略行：在模式自己的作用域注册一个 Skill 提供方，为每个关掉的 Skill 列出一条模型和用户都不能调用的条目；为每个「仅手动」或「仅模型」的 Skill 列出一条只有用户、或只有模型能调用的条目，加载时读 Skill 当前的文件（rank -1000）。装了 dsh-modes 时不列任何条目 |
 | `mode-rows.js` | 策略行的增删、卸载条件（`disabled: !!js`，找不到 `dsh-mode-skills` 包时为真），以及用 `rebase.js` 并入内置行的更新 |
 | `rebase.js`、`fs-retry.js` | 三方合并与 Windows 上的重命名重试，和 dsh-modes 相同 |
 | `state.js` | `<profile>/.dsh-mode-skills/state.json`：各模式关掉、设为仅手动、设为仅模型的 Skill，上次合并时的内置行，以及每个 Skill 的 `info`（最近一次看到的说明，所有模式都关掉它时仍能显示）、`alias` 和 `tags`、`imported`（导入来源、指纹，GitHub 来源还有仓库、ref、文件夹、提交和发现的最新版本）和版本索引；版本文件在 `skill-versions/<skill>/<version>/`。原子写入，损坏的文件只报告、不覆盖 |
 | `skill-store.js` | 版本号、SKILL.md frontmatter 解析、换行符处理，以及哪些 Skill 能改文件（`node_modules` 里的不能），和 dsh-modes 的规则相同 |
-| `trash.js` | 回收站：Skill 文件夹或单文件移到 `<profile>/.dsh-mode-skills/trash/<id>/`，记下原位置，恢复时原样搬回；跨磁盘或 Windows 不让改名时改为复制后删除。「移动」按钮用的是同一个移动函数 |
+| `trash.js` | 回收站：Skill 文件夹或单文件移到 `<profile>/.dsh-mode-skills/trash/<id>/`，记下原位置，恢复时原样搬回；跨磁盘或 Windows 不让改名时改为复制后删除。「只给 DSH」和「所有 Agent」用的是同一个移动函数 |
+| `agent-links.js` | 已知用户 Skill 目录的 Agent 工具（`skills` CLI 的列表）和其中装在这台电脑上的；对一个 Skill 文件夹，每个工具看到的是什么（直接读共享目录、指向它的链接、没有、内容相同的副本，或它自己的同名 Skill）；以及建立和删除这些链接：相对链接，Windows 上是目录联接，只删链接、不删别的 |
 | `diagnose.js` | 找出 Skill 目录里有 SKILL.md、但没有任何模式列出的文件，按 DSH 的检查顺序说明原因（BOM、frontmatter、常见 YAML 错误、name/description、name 格式、旧字段、调用开关），并给出能自动改的修复。YAML 只检查常见错误，其余情况写「原因见 DSH 日志」 |
 | `tokens.js` | 按 DSH 的 Skill 目录格式（每个模型可调用的 Skill 一行 `` - `名字`: 描述 ``，描述压缩空白、截到 500 字，外加固定说明）估算 token：英文字符约 0.3、中文字符约 0.6（DeepSeek 公布的估算比例），不是真实分词结果 |
 | `zip.js` | 读取 zip（只支持不压缩和 deflate；不支持加密和 zip64），跳过文件夹、链接和 macOS 元数据，拒绝越出压缩包的路径，解压时就按文件数和字节数限制；不解压就能读出压缩包注释和路径列表；也能写出导出用的 zip |
@@ -116,6 +118,7 @@ npm test
 - **常用功能**：各模式的 Skill 目录开销显示正确，按 token 排序有效；把一个 Skill 在标准模式设成「仅手动」后，标准模式的目录少了这一项，标准模式会话的 `/` 菜单里它仍在、并标为 user-only；删除、撤销、从回收站恢复都正确；一个 description 含冒号的 SKILL.md 被列为没被加载，保存给出的修复后 DSH 加载了它；能列出 `~/.cursor/skills`，上传 zip 后导入成功。和 dsh-modes 一起装时，「仅手动」不可选并写明原因，其余照常可用。
 - **管理和 GitHub**：显示名和标签保存后显示在行上；把一个 Skill 设成「仅模型」后，注册表自己的列表里该模式显示「仅模型调用」；在 Skill 文件夹里新建的文件保存后出现在列表里；只出现在正文里的词能搜到对应的 Skill；填上项目文件夹后列出了该项目的 Skill（带来源和 token 开销）；对一个模式「列表全部关闭」后撤销，所有设置恢复；读取了真实仓库（`anthropics/skills`），从里面安装了三个 Skill，把其中一个伪造成旧版本后「检查更新」发现了它，「全部更新」覆盖成功。装了 dsh-modes 时，「交给模式管理」把一项「关闭」写进了模式管理的设置，并在这里清掉了。
 - **Skill 商城和使用统计**：搜索 skills.sh 并打开一个结果，读取了它的仓库并且只选中了那个 Skill；推荐列表正常显示。在商城搜索框里分别粘贴 `https://skills.sh/anthropics/skills/pdf`、`npx skills add https://github.com/anthropics/skills --skill docx` 和指向某个 Skill 文件夹的 `tree` 链接，都读取了 `anthropics/skills` 并只选中了那一个；输入 `anthropics/skills` 按回车列出了全部 20 个、一个都没选；GitLab 地址被拒绝，并说明了网站。用本地模拟模型，一个会话（标准模式）用 `skill` 工具加载了一个 Skill，另一个会话（PTC 模式）输入了 `/weekly-report`：「使用统计」从真实的会话日志里各数了一次，并算在各自的模式下。
+- **只给 DSH，或所有 Agent**：在一个有 Claude Code、Codex、Cursor、Gemini CLI 目录、装了 dsh-modes 的环境里，对一个 Skill 选「所有 Agent」，它被移到 `~/.agents/skills`，Claude Code 和 Cursor 的目录里各多了一个相对链接，Gemini CLI 里内容不同的同名 Skill 没被动，和确认框说的一致；「其他 Agent」列出了四个工具和各自的数量，把剩下的只给 DSH 的 Skill 一次给了所有 Agent，Cursor 里内容相同的副本换成了链接，原来那份进了回收站；「只给 DSH」把 Skill 移了回来并删掉了链接；新建时选「所有 Agent」的 Skill 立刻链接好了；导入列表把这些链接标为「已是 DSH 的 Skill」。
 - **模型实际看到的**（模拟模型收到的请求）：标准模式里一个 Skill 是「仅手动」、一个是「关」、一个是「仅模型」，目录里有「仅模型」的那个，另外两个没有；PTC 模式里都是「开」，`/weekly-report` 注入了这个 Skill 的内容；在标准模式（它是「仅模型」）里同样的一行只是普通文字。
 - **更新**：对着真实的 npm 源，标成 0.1.9 的副本发现了 0.2.0，「升级…」通过 DSH 的安装器装上了它，配置随后依赖 0.2.0 的压缩包；在 0.2.1-rc.2 上新版本不用重启就换上了。再装一次同一个版本，会提示已经装好、重启后生效。手动写入的升级记录在页面上显示为「已升级到」，点「关闭」后记录被清掉。
 - 还没检查：*正在运行*的会话何时拿到改动后的 Skill 目录；这一点和 dsh-modes 用的是同一种机制（提供方失效和文件监视）。

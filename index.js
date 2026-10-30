@@ -23,12 +23,17 @@
  * other agent tools work the same with or without dsh-modes, which has none of them. `list` also estimates what each
  * skill and each mode's whole catalog cost the model (tokens.js).
  *
+ * `setScope` chooses who can use a skill in the user folders: DSH alone (`~/.dsh/skills`), or every agent tool on this
+ * computer, through one copy in the shared folder and links to it in the other tools' folders (agent-links.js). `list`
+ * reports, for each such skill, which installed tools can use it.
+ *
  * The update actions check for a newer release of this plugin and install it with DSH's plugin manager
  * (self-update.js); they keep their switch in `<profile>/.dsh-mode-skills/settings.json`.
  */
 import { randomBytes } from 'node:crypto'
 import { lstat, mkdir, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path'
+import { installedAgents, linkSkill, reachOf, removeLink } from './agent-links.js'
 import { analyzeSkillText, findSkipped, proposeFix } from './diagnose.js'
 import { MAX_ARCHIVE_BYTES, commitOf, downloadArchive, inSkillDirs, parseGithub, skillDirsIn, wrapperOf } from './github.js'
 import { hasPolicyRow, planRows, refreshRows } from './mode-rows.js'
@@ -148,7 +153,7 @@ const ACTIONS = {
   readSkillAsset: (m, body) => readSkillAsset(m, body),
   writeSkillAsset: (m, body) => writeSkillAsset(m, body),
   exportSkill: (m, body) => exportSkill(m, body),
-  moveSkill: (m, body) => moveSkill(m, body),
+  setScope: (m, body) => setScope(m, body),
   deleteSkillAsset: (m, body) => deleteSkillAsset(m, body),
   githubSources: (m, body) => githubSources(m, body),
   checkUpdates: (m, body) => checkUpdates(m, body),
@@ -273,8 +278,9 @@ async function list(m, refresh, folder) {
   const known = Object.fromEntries(Object.entries(state.skills).filter(([, record]) => record?.info !== undefined).map(([skill, record]) => [skill, record.info]))
   const view = summarize(scans, undefined, known)
   if (stateError === undefined) await remember(m, state, view.skills)
-  const skills = (await withLibrary(view.skills, state.skills)).map(skill => ({ ...skill, tokens: skillTokens(skill.name, skill.description) }))
   const roots = skillRoots()
+  const agents = await installedAgents(roots.agents)
+  const skills = await withReach((await withLibrary(view.skills, state.skills)).map(skill => ({ ...skill, tokens: skillTokens(skill.name, skill.description) })), roots, agents)
   const trash = await listTrash(trashDir(m)).catch(() => [])
   return {
     ...cwd === undefined ? {} : { project: displayPath(cwd) },
@@ -299,9 +305,28 @@ async function list(m, refresh, folder) {
     trash: trash.map(entry => ({ id: entry.id, name: entry.name, display: displayPath(entry.from), at: entry.at, ...entry.description === undefined ? {} : { description: entry.description } })),
     manager: ctx.get('dshModes') === undefined ? 'self' : 'dsh-modes',
     roots: { dsh: displayPath(roots.dsh), agents: displayPath(roots.agents) },
+    agents: agents.map(agent => ({ id: agent.id, label: agent.label, dir: displayPath(agent.dir), via: agent.via })),
     registry: ctx.get('skills') !== undefined,
     ...stateError === undefined ? {} : { stateError },
   }
+}
+
+/**
+ * Add who can use each skill folder in the user folders: `reach` holds `scope` (`dsh` for `~/.dsh/skills`, `all` for
+ * the shared folder), each installed agent tool's state from {@link reachOf}, `linkedFolder` when the skill's folder is
+ * itself a link, which stays where it is, and `taken` when the shared folder already holds another folder of that name.
+ */
+async function withReach(skills, roots, agents) {
+  return Promise.all(skills.map(async (skill) => {
+    if ((skill.source !== 'user-dsh' && skill.source !== 'user-agents') || skill.editable !== true || typeof skill.path !== 'string') return skill
+    const where = skillLocation(skill.path)
+    const info = where.layout === 'directory' ? await lstat(where.root).catch(() => undefined) : undefined
+    if (info === undefined) return skill
+    const reach = { scope: skill.source === 'user-agents' ? 'all' : 'dsh', agents: await reachOf(where.root, agents, roots.agents) }
+    if (info.isSymbolicLink()) reach.linkedFolder = true
+    if (reach.scope === 'dsh' && await lstat(join(roots.agents, basename(where.root))).then(() => true, () => false)) reach.taken = true
+    return { ...skill, reach }
+  }))
 }
 
 /** Keep the details of every skill read from its file, for when every mode turns it off. */
@@ -733,6 +758,8 @@ async function candidateFor(state, dir, source, github) {
     return { ...base, folder: basename(dir), status: 'invalid', problem: 'unreadable', error: message(error) }
   }
   const item = { ...base, ...candidate }
+  // An agent tool's link to a skill DSH already reads is that skill, not another one to import.
+  if (github === undefined && await isUserSkill(dir)) return { ...item, status: 'mine' }
   if (candidate.problem === 'no-frontmatter') return { ...item, status: 'invalid' }
   const previous = github === undefined ? importedFrom(state, dir) : importedFromGithub(state, github.repo, github.path)
   if (previous !== undefined) {
@@ -743,6 +770,13 @@ async function candidateFor(state, dir, source, github) {
   }
   if (candidate.problem === 'name-invalid') return { ...item, status: 'rename' }
   return { ...item, status: await nameTaken(state, candidate.name) ? 'exists' : 'new' }
+}
+
+/** Whether a folder, with its links resolved, is a skill folder in one of the two user skill folders. */
+async function isUserSkill(dir) {
+  const roots = skillRoots()
+  const parent = dirname(dir)
+  return parent === await realpath(roots.dsh).catch(() => roots.dsh) || parent === await realpath(roots.agents).catch(() => roots.agents)
 }
 
 /**
@@ -862,14 +896,30 @@ async function deleteSkill(m, body) {
   if (!isEditableSkill(info)) throw new ActionError('skill-read-only', `Skill ${skill} belongs to an installed package and cannot be changed`, { skill })
   const where = skillLocation(info.path)
   if (!(await exists(where.root))) throw new ActionError('skill-no-file', `The files of ${skill} are gone`, { skill })
+  const roots = skillRoots()
+  const agents = await installedAgents(roots.agents)
+  const reach = where.layout === 'directory' ? await reachOf(where.root, agents, roots.agents) : {}
   const id = await trashSkill({ trashDir: trashDir(m), name: skill, from: where.root, layout: where.layout, ...typeof info.description === 'string' ? { description: info.description } : {} })
+  for (const agent of agents.filter(entry => entry.via === 'link' && reach[entry.id] === 'linked')) {
+    // A link left behind leads nowhere, which the tool skips; sharing the skill again replaces it.
+    await removeLink(join(agent.dir, basename(where.root))).catch(() => undefined)
+  }
   await settle(m)
   return { id }
 }
 
-/** Put a bin entry back where it came from. */
+/** Put a bin entry back where it came from; a skill back in the shared folder is linked into the tools again. */
 async function restoreFromTrash(m, body) {
   const restored = await restoreTrash(trashDir(m), body.id)
+  const roots = skillRoots()
+  if (await realpath(dirname(restored.from)).catch(() => undefined) === await realpath(roots.agents).catch(() => roots.agents) && (await lstat(restored.from)).isDirectory()) {
+    const agents = await installedAgents(roots.agents)
+    const reach = await reachOf(restored.from, agents, roots.agents)
+    for (const agent of agents.filter(entry => entry.via === 'link' && reach[entry.id] === 'missing')) {
+      // A tool it cannot be linked into shows as missing on the page, which offers to link it again.
+      await linkSkill(agent, restored.from).catch(() => undefined)
+    }
+  }
   await settle(m)
   return { name: restored.name, display: displayPath(restored.from) }
 }
@@ -1310,34 +1360,112 @@ async function exportSkill(m, body) {
 }
 
 /**
- * Move a skill folder between the two user skill folders.
- * @param {{ skill?: unknown, target?: unknown }} body - the skill and the folder to move it to (`dsh` or `agents`).
- * @returns {Promise<{ display: string }>} the skill's new location.
+ * Choose who can use skills in the user folders (agent-links.js). `all` moves a skill from `~/.dsh/skills` to the shared
+ * folder and links it into each installed tool that does not read that folder: a tool's own copy with the same files
+ * becomes a link (the copy goes to the bin), and a different skill of its own with that name is left alone. `dsh` moves
+ * the skill back to `~/.dsh/skills` and removes the links to it. Mode settings follow the skill's name, so they stay.
+ * @param {{ skills?: unknown, scope?: unknown }} body - skill names, and `all` or `dsh`.
+ * @returns {Promise<{ results: object[] }>} per skill, `{ skill, status: 'done', moved, linked, replaced, kept, unlinked,
+ *   failed }` with tool ids (`failed` holds `{ agent, error }` for links that could not be made or removed), or
+ *   `{ skill, status: 'error', code, error, details? }` when the skill was left as it was.
  */
-async function moveSkill(m, body) {
-  const skill = checkSkill(body.skill)
-  const { root: destination, source } = rootFor(body.target)
-  const info = await skillFile(m, skill)
+async function setScope(m, body) {
+  if (body.scope !== 'all' && body.scope !== 'dsh') throw new ActionError('bad-request', 'scope must be all or dsh')
+  if (!Array.isArray(body.skills) || body.skills.length === 0) throw new ActionError('bad-request', 'skills must be a non-empty list')
+  const roots = skillRoots()
+  const agents = await installedAgents(roots.agents)
+  const results = []
+  for (const name of body.skills) {
+    try {
+      const skill = checkSkill(name)
+      results.push({ skill, status: 'done', ...await (body.scope === 'all' ? shareSkill(m, skill, roots, agents) : keepForDsh(m, skill, roots, agents)) })
+    } catch (error) {
+      const known = error instanceof ActionError || error instanceof SkillFileError
+      results.push({ skill: String(name), status: 'error', code: known ? error.code : 'failed', error: message(error), ...known && error.details !== undefined ? { details: error.details } : {} })
+    }
+  }
+  if (results.some(result => result.moved)) await settle(m)
+  return { results }
+}
+
+/** Give a skill to every agent tool; see {@link setScope}. */
+async function shareSkill(m, skill, roots, agents) {
+  const folder = await userSkillFolder(m, skill, roots)
+  const moved = folder.place === 'dsh'
+  const root = moved ? await moveSkillFolder(m, skill, folder, roots.agents, 'user-agents') : folder.root
+  const reach = await reachOf(root, agents, roots.agents)
+  const result = { moved, linked: [], replaced: [], kept: [], failed: [] }
+  for (const agent of agents.filter(entry => entry.via === 'link')) {
+    try {
+      if (reach[agent.id] === 'same') {
+        // Bin entries are named by time and skill, so each replaced copy of this skill gets its own millisecond.
+        await trashSkill({ trashDir: trashDir(m), name: skill, from: join(agent.dir, basename(root)), layout: 'directory', now: Date.now() + result.replaced.length, ...typeof folder.info.description === 'string' ? { description: folder.info.description } : {} })
+        await linkSkill(agent, root)
+        result.replaced.push(agent.id)
+      } else if (reach[agent.id] === 'missing') {
+        await linkSkill(agent, root)
+        result.linked.push(agent.id)
+      } else if (reach[agent.id] === 'own') {
+        result.kept.push(agent.id)
+      }
+    } catch (error) {
+      result.failed.push({ agent: agent.id, error: message(error) })
+    }
+  }
+  return result
+}
+
+/** Keep a skill for DSH alone; see {@link setScope}. */
+async function keepForDsh(m, skill, roots, agents) {
+  const folder = await userSkillFolder(m, skill, roots)
+  const reach = await reachOf(folder.root, agents, roots.agents)
+  const links = agents.filter(agent => agent.via === 'link' && reach[agent.id] === 'linked')
+  const moved = folder.place === 'agents'
+  if (moved) await moveSkillFolder(m, skill, folder, roots.dsh, 'user-dsh')
+  const result = { moved, unlinked: [], failed: [] }
+  for (const agent of links) {
+    try {
+      await removeLink(join(agent.dir, basename(folder.root)))
+      result.unlinked.push(agent.id)
+    } catch (error) {
+      result.failed.push({ agent: agent.id, error: message(error) })
+    }
+  }
+  return result
+}
+
+/** A skill folder in one of the two user skill folders: where it is, which of the two (`dsh` or `agents`), and its file. */
+async function userSkillFolder(m, skill, roots) {
+  const info = await skillFile(m, skill).catch(async (error) => {
+    // A skill created or imported a moment ago is in the settings file only once the page has listed it.
+    for (const [root, source] of [[roots.dsh, 'user-dsh'], [roots.agents, 'user-agents']]) {
+      const path = join(root, skill, 'SKILL.md')
+      if (await exists(path)) return { path, source }
+    }
+    throw error
+  })
   if (!isEditableSkill(info)) throw new ActionError('skill-read-only', `Skill ${skill} belongs to an installed package and cannot be changed`, { skill })
   const where = skillLocation(info.path)
   if (where.layout !== 'directory') throw new ActionError('skill-single-file', `Skill ${skill} is a single file, not a folder`, { skill })
   if (!(await exists(where.root))) throw new ActionError('skill-no-file', `The files of ${skill} are gone`, { skill })
-  if ((await lstat(where.root)).isSymbolicLink()) throw new ActionError('skill-linked', `The skill folder ${where.root} is a link`, {})
-  const here = await realpath(dirname(where.root))
-  const roots = await Promise.all(Object.values(skillRoots()).map(dir => realpath(dir).catch(() => dir)))
-  if (!roots.includes(here)) throw new ActionError('skill-not-in-user-folder', `Skill ${skill} is not in one of the user skill folders`, { skill })
-  const there = await realpath(destination).catch(() => destination)
-  if (here === there) throw new ActionError('skill-already-there', `Skill ${skill} is already in ${displayPath(destination)}`, { skill })
-  const to = join(destination, basename(where.root))
-  if (await exists(to)) throw new ActionError('skill-exists', `A skill named ${skill} already exists`, { name: skill })
-  await moveItem(where.root, to)
+  const parent = await realpath(dirname(where.root))
+  const place = parent === await realpath(roots.dsh).catch(() => roots.dsh) ? 'dsh' : parent === await realpath(roots.agents).catch(() => roots.agents) ? 'agents' : undefined
+  if (place === undefined) throw new ActionError('skill-not-in-user-folder', `Skill ${skill} is not in one of the user skill folders`, { skill })
+  return { info, root: where.root, place, linked: (await lstat(where.root)).isSymbolicLink() }
+}
+
+/** Move a skill folder into another user skill folder and remember its new file; returns the new folder. */
+async function moveSkillFolder(m, skill, folder, destination, source) {
+  if (folder.linked) throw new ActionError('skill-folder-linked', `The skill folder ${folder.root} is a link`, { skill })
+  const to = join(destination, basename(folder.root))
+  if (await lstat(to).then(() => true, () => false)) throw new ActionError('skill-exists-there', `${displayPath(to)} already exists`, { name: skill, path: displayPath(to) })
+  await moveItem(folder.root, to)
   const path = join(to, 'SKILL.md')
   await m.store.update((next) => {
     const saved = next.skills[skill]
     if (saved?.info !== undefined) saved.info = { ...saved.info, path, source, display: displayPath(path) }
   })
-  await settle(m)
-  return { display: displayPath(to) }
+  return to
 }
 
 /** The ways one address names a repository's ref, tried until a download is found. */
