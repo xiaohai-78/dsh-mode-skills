@@ -9,7 +9,7 @@ DeepSeek Harness（dsh）的 Skill（技能）管理插件。它在侧栏「插�
 ## 能做什么
 
 - **侧栏入口**：「Skill 管理」和「插件」「自动化任务」在同一级，不用进设置。
-- **全部 Skill 一览**：每个 Skill 显示名称、来源（DSH 用户目录、通用目录、项目、随模式提供、随插件包提供、GitHub 等）和说明。展开后能看到文件位置、何时使用，以及它在每个模式里的状态。
+- **全部 Skill 一览**：每个 Skill 显示名称、来源（DSH 用户目录、共享目录、项目、随模式提供、随插件包提供、GitHub 等）和说明。展开后能看到文件位置、何时使用，以及它在每个模式里的状态。
 - **按模式开关**：列表里每个加载 Skill 的模式占一列（最多四列；模式更多或窗口较窄时，每行改为显示在几个模式里开着），每个 Skill 一个开关，点一下就在这个模式里打开或关闭；显示「—」表示这个模式里没有这个 Skill，设成「仅手动」「仅模型」的格子显示文字，点它会展开这一行。展开一个 Skill，每个模式都有「开 / 仅手动 / 仅模型 / 关」四档，也可以一键在所有模式打开或关闭；在上方选一个模式，每行右边会出现这个模式的开关，还有对当前列表的「列表全部打开 / 列表全部关闭」（可以撤销）。「仅手动」：模型看不到它，你仍可以输入 `/名字` 调用。「仅模型」：模型能看到并加载它，`/` 菜单里不显示。不加载 Skill 的模式（比如极简模式）、这个模式里没有的 Skill 不能设置，旁边会写明原因。
 - **搜索和整理**：搜索覆盖名称、描述、显示名、标签和 Skill 文件的正文（只在正文里命中的会标「正文匹配」）。可以给 Skill 起一个显示名（比如中文名）、加标签，并按标签筛选；这些只保存在本插件的设置里，不会改动 Skill 文件。
 - **项目里的 Skill**：「项目」里填一个项目文件夹（点「查看」时先检查，并列出最近用过的），列表就会加上它 `.dsh/skills` 和 `.agents/skills` 里的 Skill。开关按名字对所有项目生效；会话在该项目里运行时才会加载这些 Skill。
@@ -78,9 +78,11 @@ dsh plugin --profile web remove dsh-mode-skills
 
 ## 开发
 
+改动插件前，先读 [AGENTS.md](AGENTS.md)、[docs/requirements.zh.md](docs/requirements.zh.md)、[docs/adr/](docs/adr/) 和 [GLOSSARY.zh.md](GLOSSARY.zh.md)。
+
 | 文件 | 作用 |
 |---|---|
-| `index.js` | Host 插件：提供 `POST /api/dsh-mode-skills` 和策略行读取的 `dshModeSkills` 服务。操作有：`list`、`setModes`，和 dsh-modes 同名、同参数的 Skill 库操作（`createSkill`、`readSkillFile`、`writeSkillFile`、`saveSkillVersion`、`restoreSkillVersion`、`deleteSkillVersion`、`readSkillVersion`、`skillSources`、`importSkills`），以及本插件自己的：`deleteSkill` 和回收站、`readSkipped`、`writeSkipped`、`stageUpload`、`importUploads`、`agentSources`、`setMeta`、`searchSkills`、`listSkillFiles`、`readSkillAsset`、`writeSkillAsset`、`deleteSkillAsset`、`exportSkill`、`setScope`、`githubSources`、`checkUpdates`、`updateGithub`、`clearModes`、`usage`、`storeSearch`、`storeIndex`，以及插件更新相关的 `updateStatus`、`setUpdateCheck`、`dismissUpgraded`、`upgrade`、`upgradeStatus`、`cancelUpgrade`（这些总是由本插件回答）。装了 dsh-modes 时，Skill 库和设置类操作会拒绝（`managed-by-modes`）。`list` 用 `agentPresets.acquireScope` 为每个模式挂载作用域，读取 `skills.snapshot`（选了项目文件夹时带上 `cwd`）和是否有 `skill` 工具，再释放作用域；每个模式的结果缓存 60 秒，改动过的模式和页面的「刷新」会跳过缓存。启动时给本插件写过的模式补上卸载条件，并在模式只差本插件这一行时并入 DSH 的内置更新 |
+| `index.js` | Host 插件：提供 `POST /api/dsh-mode-skills` 和策略行读取的 `dshModeSkills` 服务。操作有：`list`、`setModes`，和 dsh-modes 同名、同参数的 Skill 库操作（`createSkill`、`readSkillFile`、`writeSkillFile`、`saveSkillVersion`、`restoreSkillVersion`、`deleteSkillVersion`、`readSkillVersion`、`skillSources`、`importSkills`），以及本插件自己的：`deleteSkill` 和回收站、`readSkipped`、`writeSkipped`、`stageUpload`、`importUploads`、`agentSources`、`setMeta`、`searchSkills`、`listSkillFiles`、`readSkillAsset`、`writeSkillAsset`、`deleteSkillAsset`、`exportSkill`、`setAudience`、`githubSources`、`checkUpdates`、`updateGithub`、`clearModes`、`usage`、`storeSearch`、`storeIndex`，以及插件更新相关的 `updateStatus`、`setUpdateCheck`、`dismissUpgraded`、`upgrade`、`upgradeStatus`、`cancelUpgrade`（这些总是由本插件回答）。装了 dsh-modes 时，Skill 库和设置类操作会拒绝（`managed-by-modes`）。`list` 用 `agentPresets.acquireScope` 为每个模式挂载作用域，读取 `skills.snapshot`（选了项目文件夹时带上 `cwd`）和是否有 `skill` 工具，再释放作用域；每个模式的结果缓存 60 秒，改动过的模式和页面的「刷新」会跳过缓存。启动时给本插件写过的模式补上卸载条件，并在模式只差本插件这一行时并入 DSH 的内置更新 |
 | `policy.js` | 放进模式里的策略行：在模式自己的作用域注册一个 Skill 提供方，为每个关掉的 Skill 列出一条模型和用户都不能调用的条目；为每个「仅手动」或「仅模型」的 Skill 列出一条只有用户、或只有模型能调用的条目，加载时读 Skill 当前的文件（rank -1000）。装了 dsh-modes 时不列任何条目 |
 | `mode-rows.js` | 策略行的增删、卸载条件（`disabled: !!js`，找不到 `dsh-mode-skills` 包时为真），以及用 `rebase.js` 并入内置行的更新 |
 | `rebase.js`、`fs-retry.js` | 三方合并与 Windows 上的重命名重试，和 dsh-modes 相同 |
@@ -106,22 +108,11 @@ npm test
 
 在 Node 22.19 和 24 上运行；本机 Node 不在这个范围时，用 `npx --yes node@22.19.0 --test "test/*.test.js"`。
 
-### 验证方式
+每个功能必须做到什么、在 DSH `0.2.1-rc.2` 上是怎么验证的，见 [docs/requirements.zh.md](docs/requirements.zh.md)。
 
-在 DSH `0.2.1-rc.2` 上用独立的 `DSH_HOME` 检查过：
+## 更新记录
 
-- **只装本插件**：在标准模式关掉一个 Skill，模式里加上了带条件的策略行，列表显示该模式「已关闭」；页面上用开关关掉、再打开都正确保存，提示文字符合上面的生效时机。
-- **卸载**：`dsh plugin remove` 并删掉插件文件后，标准模式仍在模式列表里，能新建会话；重新安装后，关掉的 Skill 又是关闭状态。
-- **和 dsh-modes 一起装**：页面显示由模式管理负责；在这里关掉 PTC 模式的一个 Skill，设置写进了 dsh-modes 的 `skills.json`，本插件自己的设置没有变化。
-- **Skill 库，只装本插件**：新建的 Skill 直接打开编辑器，只在选中的模式开启；编辑保存前存了版本；从 Codex 和 Claude Code 导入了两个 Skill，同名的没有预选；改动 Codex 里的来源后列表标出「来源有更新」，重新导入后提示消失并留下导入前的版本；保存（带备注）、查看、恢复、删除版本都正确。
-- **Skill 库，和 dsh-modes 一起装**：页面上的新建、读文件、保存版本、导入列表和导入都发给了 `/api/dsh-modes`；Skill 信息、版本和导入记录写进了 dsh-modes 的数据，本插件自己的数据里没有。
-- **常用功能**：各模式的 Skill 目录开销显示正确，按 token 排序有效；把一个 Skill 在标准模式设成「仅手动」后，标准模式的目录少了这一项，标准模式会话的 `/` 菜单里它仍在、并标为 user-only；删除、撤销、从回收站恢复都正确；一个 description 含冒号的 SKILL.md 被列为没被加载，保存给出的修复后 DSH 加载了它；能列出 `~/.cursor/skills`，上传 zip 后导入成功。和 dsh-modes 一起装时，「仅手动」不可选并写明原因，其余照常可用。
-- **管理和 GitHub**：显示名和标签保存后显示在行上；把一个 Skill 设成「仅模型」后，注册表自己的列表里该模式显示「仅模型调用」；在 Skill 文件夹里新建的文件保存后出现在列表里；只出现在正文里的词能搜到对应的 Skill；填上项目文件夹后列出了该项目的 Skill（带来源和 token 开销）；对一个模式「列表全部关闭」后撤销，所有设置恢复；读取了真实仓库（`anthropics/skills`），从里面安装了三个 Skill，把其中一个伪造成旧版本后「检查更新」发现了它，「全部更新」覆盖成功。装了 dsh-modes 时，「交给模式管理」把一项「关闭」写进了模式管理的设置，并在这里清掉了。
-- **Skill 商城和使用统计**：搜索 skills.sh 并打开一个结果，读取了它的仓库并且只选中了那个 Skill；推荐列表正常显示。在商城搜索框里分别粘贴 `https://skills.sh/anthropics/skills/pdf`、`npx skills add https://github.com/anthropics/skills --skill docx` 和指向某个 Skill 文件夹的 `tree` 链接，都读取了 `anthropics/skills` 并只选中了那一个；输入 `anthropics/skills` 按回车列出了全部 20 个、一个都没选；GitLab 地址被拒绝，并说明了网站。用本地模拟模型，一个会话（标准模式）用 `skill` 工具加载了一个 Skill，另一个会话（PTC 模式）输入了 `/weekly-report`：「使用统计」从真实的会话日志里各数了一次，并算在各自的模式下。
-- **只给 DSH，或所有 Agent**：在一个有 Claude Code、Codex、Cursor、Gemini CLI 目录、装了 dsh-modes 的环境里，对一个 Skill 选「所有 Agent」，它被移到 `~/.agents/skills`，Claude Code 和 Cursor 的目录里各多了一个相对链接，Gemini CLI 里内容不同的同名 Skill 没被动，和确认框说的一致；「其他 Agent」列出了四个工具和各自的数量，把剩下的只给 DSH 的 Skill 一次给了所有 Agent，Cursor 里内容相同的副本换成了链接，原来那份进了回收站；「只给 DSH」把 Skill 移了回来并删掉了链接；新建时选「所有 Agent」的 Skill 立刻链接好了；导入列表把这些链接标为「已是 DSH 的 Skill」。
-- **模型实际看到的**（模拟模型收到的请求）：标准模式里一个 Skill 是「仅手动」、一个是「关」、一个是「仅模型」，目录里有「仅模型」的那个，另外两个没有；PTC 模式里都是「开」，`/weekly-report` 注入了这个 Skill 的内容；在标准模式（它是「仅模型」）里同样的一行只是普通文字。
-- **更新**：对着真实的 npm 源，标成 0.1.9 的副本发现了 0.2.0，「升级…」通过 DSH 的安装器装上了它，配置随后依赖 0.2.0 的压缩包；在 0.2.1-rc.2 上新版本不用重启就换上了。再装一次同一个版本，会提示已经装好、重启后生效。手动写入的升级记录在页面上显示为「已升级到」，点「关闭」后记录被清掉。
-- 还没检查：*正在运行*的会话何时拿到改动后的 Skill 目录；这一点和 dsh-modes 用的是同一种机制（提供方失效和文件监视）。
+见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 许可证
 
