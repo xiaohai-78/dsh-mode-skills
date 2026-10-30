@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { isDeepStrictEqual } from 'node:util'
 
 // A home with Claude Code, Codex, Cursor, and Gemini CLI installed.
-const home = await realpath(await mkdtemp(join(tmpdir(), 'dsh-mode-skills-scope-')))
+const home = await realpath(await mkdtemp(join(tmpdir(), 'dsh-mode-skills-audience-')))
 process.env.HOME = home
 process.env.USERPROFILE = home
 process.env.DSH_HOME = join(home, '.dsh')
@@ -82,9 +82,9 @@ test('gives a skill to every agent tool through one shared copy and links, then 
 
   const listed = await value('list')
   assert.deepEqual(listed.agents.map(agent => [agent.id, agent.via]), [['claude-code', 'link'], ['codex', 'shared'], ['cursor', 'link'], ['gemini-cli', 'link']])
-  assert.deepEqual(await reach('standup'), { scope: 'dsh', agents: { 'claude-code': 'missing', codex: 'missing', cursor: 'same', 'gemini-cli': 'own' } })
+  assert.deepEqual(await reach('standup'), { audience: 'dsh', agents: { 'claude-code': 'missing', codex: 'missing', cursor: 'same', 'gemini-cli': 'own' } })
 
-  const [shared] = (await value('setScope', { skills: ['standup'], scope: 'all' })).results
+  const [shared] = (await value('setAudience', { skills: ['standup'], audience: 'all' })).results
   assert.deepEqual(shared, { skill: 'standup', status: 'done', moved: true, linked: ['claude-code'], replaced: ['cursor'], kept: ['gemini-cli'], failed: [] })
   assert.ok(await gone(join(dshDir, 'standup')))
   for (const dir of [claudeDir, cursorDir]) {
@@ -92,7 +92,7 @@ test('gives a skill to every agent tool through one shared copy and links, then 
     assert.equal(await realpath(join(dir, 'standup')), join(sharedDir, 'standup'))
   }
   assert.match(await readFile(join(geminiDir, 'standup', 'SKILL.md'), 'utf8'), /Gemini own/, 'a different skill of its own is left alone')
-  assert.deepEqual(await reach('standup'), { scope: 'all', agents: { 'claude-code': 'linked', codex: 'shared', cursor: 'linked', 'gemini-cli': 'own' } })
+  assert.deepEqual(await reach('standup'), { audience: 'all', agents: { 'claude-code': 'linked', codex: 'shared', cursor: 'linked', 'gemini-cli': 'own' } })
   assert.equal((await value('readSkillFile', { skill: 'standup' })).path, join(sharedDir, 'standup', 'SKILL.md'))
   assert.deepEqual((await value('list')).trash.map(entry => [entry.name, entry.display]), [['standup', join('~', '.cursor', 'skills', 'standup')]], 'the replaced copy can be restored')
 
@@ -100,19 +100,19 @@ test('gives a skill to every agent tool through one shared copy and links, then 
   const claude = (await value('skillSources')).groups.find(group => group.source === 'claude')
   assert.deepEqual(claude.items.map(item => [item.name, item.status]), [['standup', 'mine']])
 
-  const [kept] = (await value('setScope', { skills: ['standup'], scope: 'dsh' })).results
+  const [kept] = (await value('setAudience', { skills: ['standup'], audience: 'dsh' })).results
   assert.deepEqual(kept, { skill: 'standup', status: 'done', moved: true, unlinked: ['claude-code', 'cursor'], failed: [] })
   assert.ok(await gone(join(claudeDir, 'standup')))
   assert.ok(await gone(join(cursorDir, 'standup')))
   assert.ok(await gone(join(sharedDir, 'standup')))
   assert.match(await readFile(join(dshDir, 'standup', 'scripts', 'run.sh'), 'utf8'), /bin\/sh/)
-  assert.deepEqual(await reach('standup'), { scope: 'dsh', agents: { 'claude-code': 'missing', codex: 'missing', cursor: 'missing', 'gemini-cli': 'own' } })
+  assert.deepEqual(await reach('standup'), { audience: 'dsh', agents: { 'claude-code': 'missing', codex: 'missing', cursor: 'missing', 'gemini-cli': 'own' } })
 
   await writeSkill(join(sharedDir, 'standup'), '---\nname: standup\ndescription: Another\n---\n')
-  const [blocked] = (await value('setScope', { skills: ['standup'], scope: 'all' })).results
+  const [blocked] = (await value('setAudience', { skills: ['standup'], audience: 'all' })).results
   assert.deepEqual([blocked.status, blocked.code, blocked.details], ['error', 'skill-exists-there', { name: 'standup', path: join('~', '.agents', 'skills', 'standup') }])
   assert.match(await readFile(join(dshDir, 'standup', 'SKILL.md'), 'utf8'), /Daily/, 'a refused skill stays where it was')
-  assert.equal((await call('setScope', { skills: ['standup'], scope: 'everyone' })).code, 'bad-request')
+  assert.equal((await call('setAudience', { skills: ['standup'], audience: 'everyone' })).code, 'bad-request')
 })
 
 test('links a shared skill into the tools that miss it, replaces links to nowhere, and follows delete and restore', async () => {
@@ -122,7 +122,7 @@ test('links a shared skill into the tools that miss it, replaces links to nowher
   const { value, reach } = await mount()
   assert.deepEqual((await reach('notes')).agents, { 'claude-code': 'missing', codex: 'shared', cursor: 'missing', 'gemini-cli': 'missing' })
 
-  const [filled] = (await value('setScope', { skills: ['notes'], scope: 'all' })).results
+  const [filled] = (await value('setAudience', { skills: ['notes'], audience: 'all' })).results
   assert.deepEqual([filled.moved, filled.linked], [false, ['claude-code', 'cursor', 'gemini-cli']])
   assert.equal(await realpath(join(claudeDir, 'notes')), join(sharedDir, 'notes'), 'a link to nowhere is replaced')
 
@@ -135,6 +135,6 @@ test('links a shared skill into the tools that miss it, replaces links to nowher
 test('links a skill just put in the shared folder before the page has listed it', async () => {
   await writeSkill(join(sharedDir, 'fresh'), '---\nname: fresh\ndescription: Fresh\n---\n')
   const { value } = await mount()
-  const [result] = (await value('setScope', { skills: ['fresh'], scope: 'all' })).results
+  const [result] = (await value('setAudience', { skills: ['fresh'], audience: 'all' })).results
   assert.deepEqual([result.status, result.moved, result.linked], ['done', false, ['claude-code', 'cursor', 'gemini-cli']])
 })

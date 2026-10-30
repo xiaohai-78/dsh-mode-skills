@@ -23,7 +23,7 @@
  * other agent tools work the same with or without dsh-modes, which has none of them. `list` also estimates what each
  * skill and each mode's whole catalog cost the model (tokens.js).
  *
- * `setScope` chooses who can use a skill in the user folders: DSH alone (`~/.dsh/skills`), or every agent tool on this
+ * `setAudience` chooses who can use a skill in the user folders: DSH alone (`~/.dsh/skills`), or every agent tool on this
  * computer, through one copy in the shared folder and links to it in the other tools' folders (agent-links.js). `list`
  * reports, for each such skill, which installed tools can use it.
  *
@@ -153,7 +153,7 @@ const ACTIONS = {
   readSkillAsset: (m, body) => readSkillAsset(m, body),
   writeSkillAsset: (m, body) => writeSkillAsset(m, body),
   exportSkill: (m, body) => exportSkill(m, body),
-  setScope: (m, body) => setScope(m, body),
+  setAudience: (m, body) => setAudience(m, body),
   deleteSkillAsset: (m, body) => deleteSkillAsset(m, body),
   githubSources: (m, body) => githubSources(m, body),
   checkUpdates: (m, body) => checkUpdates(m, body),
@@ -312,7 +312,7 @@ async function list(m, refresh, folder) {
 }
 
 /**
- * Add who can use each skill folder in the user folders: `reach` holds `scope` (`dsh` for `~/.dsh/skills`, `all` for
+ * Add who can use each skill folder in the user folders: `reach` holds `audience` (`dsh` for `~/.dsh/skills`, `all` for
  * the shared folder), each installed agent tool's state from {@link reachOf}, `linkedFolder` when the skill's folder is
  * itself a link, which stays where it is, and `taken` when the shared folder already holds another folder of that name.
  */
@@ -322,9 +322,9 @@ async function withReach(skills, roots, agents) {
     const where = skillLocation(skill.path)
     const info = where.layout === 'directory' ? await lstat(where.root).catch(() => undefined) : undefined
     if (info === undefined) return skill
-    const reach = { scope: skill.source === 'user-agents' ? 'all' : 'dsh', agents: await reachOf(where.root, agents, roots.agents) }
+    const reach = { audience: skill.source === 'user-agents' ? 'all' : 'dsh', agents: await reachOf(where.root, agents, roots.agents) }
     if (info.isSymbolicLink()) reach.linkedFolder = true
-    if (reach.scope === 'dsh' && await lstat(join(roots.agents, basename(where.root))).then(() => true, () => false)) reach.taken = true
+    if (reach.audience === 'dsh' && await lstat(join(roots.agents, basename(where.root))).then(() => true, () => false)) reach.taken = true
     return { ...skill, reach }
   }))
 }
@@ -1364,13 +1364,13 @@ async function exportSkill(m, body) {
  * folder and links it into each installed tool that does not read that folder: a tool's own copy with the same files
  * becomes a link (the copy goes to the bin), and a different skill of its own with that name is left alone. `dsh` moves
  * the skill back to `~/.dsh/skills` and removes the links to it. Mode settings follow the skill's name, so they stay.
- * @param {{ skills?: unknown, scope?: unknown }} body - skill names, and `all` or `dsh`.
+ * @param {{ skills?: unknown, audience?: unknown }} body - skill names, and `all` or `dsh`.
  * @returns {Promise<{ results: object[] }>} per skill, `{ skill, status: 'done', moved, linked, replaced, kept, unlinked,
  *   failed }` with tool ids (`failed` holds `{ agent, error }` for links that could not be made or removed), or
  *   `{ skill, status: 'error', code, error, details? }` when the skill was left as it was.
  */
-async function setScope(m, body) {
-  if (body.scope !== 'all' && body.scope !== 'dsh') throw new ActionError('bad-request', 'scope must be all or dsh')
+async function setAudience(m, body) {
+  if (body.audience !== 'all' && body.audience !== 'dsh') throw new ActionError('bad-request', 'audience must be all or dsh')
   if (!Array.isArray(body.skills) || body.skills.length === 0) throw new ActionError('bad-request', 'skills must be a non-empty list')
   const roots = skillRoots()
   const agents = await installedAgents(roots.agents)
@@ -1378,7 +1378,7 @@ async function setScope(m, body) {
   for (const name of body.skills) {
     try {
       const skill = checkSkill(name)
-      results.push({ skill, status: 'done', ...await (body.scope === 'all' ? shareSkill(m, skill, roots, agents) : keepForDsh(m, skill, roots, agents)) })
+      results.push({ skill, status: 'done', ...await (body.audience === 'all' ? shareSkill(m, skill, roots, agents) : keepForDsh(m, skill, roots, agents)) })
     } catch (error) {
       const known = error instanceof ActionError || error instanceof SkillFileError
       results.push({ skill: String(name), status: 'error', code: known ? error.code : 'failed', error: message(error), ...known && error.details !== undefined ? { details: error.details } : {} })
@@ -1388,7 +1388,7 @@ async function setScope(m, body) {
   return { results }
 }
 
-/** Give a skill to every agent tool; see {@link setScope}. */
+/** Give a skill to every agent tool; see {@link setAudience}. */
 async function shareSkill(m, skill, roots, agents) {
   const folder = await userSkillFolder(m, skill, roots)
   const moved = folder.place === 'dsh'
@@ -1415,7 +1415,7 @@ async function shareSkill(m, skill, roots, agents) {
   return result
 }
 
-/** Keep a skill for DSH alone; see {@link setScope}. */
+/** Keep a skill for DSH alone; see {@link setAudience}. */
 async function keepForDsh(m, skill, roots, agents) {
   const folder = await userSkillFolder(m, skill, roots)
   const reach = await reachOf(folder.root, agents, roots.agents)
